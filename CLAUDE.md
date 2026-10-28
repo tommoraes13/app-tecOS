@@ -28,6 +28,12 @@ Regras fechadas na Fase 1:
 - Celular: menu hambúrguer, controles com 44px de altura, modais em tela cheia, tabelas viram lista de cards.
 - Textos: "você", sem emoji, sem exclamação (exceto a saudação), R$ 1.250,00, 28/10/2026, OS 00042.
 
+## Ambientes
+
+- App em produção: https://app-tec-os.vercel.app (Vercel, publica a cada envio para `main`).
+- Supabase: projeto **TecOS-v1** (`ytpvbfgzuwvmktqcoucq`, região São Paulo). O outro projeto da organização não pertence ao app: não mexer.
+- Scripts do banco em `supabase/migrations/`, na ordem em que foram aplicados.
+
 ## Código
 
 - Next.js 15 App Router, TypeScript estrito, Tailwind 4, ícones `lucide-react`.

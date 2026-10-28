@@ -2,6 +2,8 @@
 
 Sistema web de gestão para técnicos de informática autônomos: clientes, equipamentos, orçamentos e ordens de serviço. Funciona no computador e no celular pelo mesmo link, e pode ser instalado na tela inicial do celular. "TecDesk" é um nome provisório.
 
+**App no ar:** https://app-tec-os.vercel.app
+
 ## Stack
 
 - Next.js 15 (App Router, TypeScript)
