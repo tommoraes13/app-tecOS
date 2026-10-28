@@ -165,7 +165,7 @@ create table public.base_orcamentos (
   id                    uuid primary key default gen_random_uuid(),
   user_id               uuid not null default auth.uid() references auth.users (id) on delete cascade,
   numero                integer not null check (numero between 1 and 99999),
-  cliente_id            uuid not null,
+  cliente_id            uuid,          -- vazio = "Não definido" (cliente excluído)
   relato                text,
   data                  date not null default current_date,
   cobrar_visita         boolean not null default false,
@@ -182,7 +182,7 @@ create table public.base_orcamentos (
   updated_at            timestamptz not null default now(),
   unique (id, user_id),
   unique (user_id, numero),
-  foreign key (cliente_id, user_id) references public.base_clientes (id, user_id) on delete restrict
+  foreign key (cliente_id, user_id) references public.base_clientes (id, user_id) on delete set null (cliente_id)
 );
 create index base_orcamentos_cliente_idx on public.base_orcamentos (cliente_id);
 create index base_orcamentos_user_data_idx on public.base_orcamentos (user_id, data desc);
@@ -232,7 +232,7 @@ create table public.base_atendimentos (
   id                    uuid primary key default gen_random_uuid(),
   user_id               uuid not null default auth.uid() references auth.users (id) on delete cascade,
   numero                integer not null check (numero between 1 and 99999),
-  cliente_id            uuid not null,
+  cliente_id            uuid,          -- vazio = "Não definido" (cliente excluído)
   orcamento_id          uuid,
   relato                text,
   data_inicio           date not null default current_date,
@@ -258,7 +258,7 @@ create table public.base_atendimentos (
   unique (id, user_id),
   unique (user_id, numero),
   unique (orcamento_id),
-  foreign key (cliente_id, user_id) references public.base_clientes (id, user_id) on delete restrict,
+  foreign key (cliente_id, user_id) references public.base_clientes (id, user_id) on delete set null (cliente_id),
   foreign key (orcamento_id, user_id) references public.base_orcamentos (id, user_id) on delete set null (orcamento_id)
 );
 create index base_atendimentos_cliente_idx on public.base_atendimentos (cliente_id);
