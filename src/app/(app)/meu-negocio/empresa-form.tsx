@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { AddressFields, type Address } from "@/components/forms/address-fields";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Feedback } from "@/components/ui/controls";
+import { Feedback, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import type { Tables } from "@/lib/database.types";
 import { cep, phone } from "@/lib/format";
@@ -25,6 +25,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
     cidade: negocio.cidade ?? "",
     estado: negocio.estado ?? "",
     regiao_atendimento_km: negocio.regiao_atendimento_km,
+    garantia_meses_padrao: negocio.garantia_meses_padrao,
   });
   const [pending, start] = useTransition();
   const [result, setResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -83,6 +84,27 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
                   set({ regiao_atendimento_km: v === "" ? null : Number(v) });
                 }}
               />
+            </Field>
+          </div>
+        </section>
+
+        <section className="grid gap-3">
+          <h2 className="text-[15px] font-semibold">Garantia</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Garantia padrão" htmlFor="gar" hint="Vem preenchida em cada nova OS e orçamento">
+              <Select
+                id="gar"
+                value={form.garantia_meses_padrao}
+                onChange={(e) => set({ garantia_meses_padrao: Number(e.target.value) })}
+              >
+                {[...new Set([0, 1, 2, 3, 6, 12, 18, 24, form.garantia_meses_padrao])]
+                  .sort((a, b) => a - b)
+                  .map((m) => (
+                    <option key={m} value={m}>
+                      {m === 0 ? "Sem garantia" : m === 1 ? "1 mês" : `${m} meses`}
+                    </option>
+                  ))}
+              </Select>
             </Field>
           </div>
         </section>

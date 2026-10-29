@@ -13,7 +13,7 @@ import { ConfirmDialog, Modal } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
 import type { Tables } from "@/lib/database.types";
 import { money, normalize } from "@/lib/format";
-import { excluirProdutos, salvarProduto, type ProdutoInput } from "./actions";
+import { excluirProdutos, salvarProduto, type ProdutoInput } from "../actions";
 
 type Produto = Tables<"cadastro_produtos">;
 

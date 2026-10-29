@@ -7,7 +7,7 @@ import { NavList } from "./nav-list";
 import { Wordmark } from "./wordmark";
 
 /** Barra superior com menu hambúrguer, abaixo de 1024px (Design System > Sidebar). */
-export function MobileNav({ footer }: { footer?: React.ReactNode }) {
+export function MobileNav({ actions }: { actions?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -40,6 +40,8 @@ export function MobileNav({ footer }: { footer?: React.ReactNode }) {
           <Menu className="size-5" />
         </button>
         <Wordmark className="text-lg" />
+        <span className="flex-1" />
+        {actions}
       </header>
 
       {open ? (
@@ -65,7 +67,6 @@ export function MobileNav({ footer }: { footer?: React.ReactNode }) {
             <div className="flex-1 overflow-y-auto">
               <NavList onNavigate={() => setOpen(false)} />
             </div>
-            {footer}
           </div>
         </div>
       ) : null}

@@ -10,7 +10,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { carregarVisitas } from "@/lib/agenda";
 import { metricas, PERIODOS, periodoValido, variacao } from "@/lib/dashboard";
 import { addDaysISO, date, money, todayISO } from "@/lib/format";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { getPerfil } from "@/lib/perfil";
+import { createClient } from "@/lib/supabase/server";
 import { greeting } from "@/lib/utils";
 import { GanhosChart } from "./ganhos-chart";
 
@@ -22,7 +23,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const hoje = todayISO();
 
   const [user, { data: negocio }, { data: oss }, proximas] = await Promise.all([
-    getCurrentUser(),
+    getPerfil(),
     supabase.from("meu_negocio").select("nome_fantasia").maybeSingle(),
     supabase
       .from("base_atendimentos")
@@ -33,7 +34,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const m = metricas(oss ?? [], periodo);
   const nome =
-    user?.name ?? negocio?.nome_fantasia ?? user?.email?.split("@")[0];
+    user?.nome ?? negocio?.nome_fantasia ?? user?.email?.split("@")[0];
   const temGanhos = m.barras.some((b) => b.valor > 0);
   const real = variacao(m.realizados, m.realizadosAntes);
   const rec = variacao(m.recebido, m.recebidoAntes);

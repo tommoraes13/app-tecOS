@@ -15,7 +15,7 @@ import { Tag } from "@/components/ui/status-badge";
 import type { Enums, Tables } from "@/lib/database.types";
 import { duration, money, normalize } from "@/lib/format";
 import { CATEGORIA_LABEL, EQUIPAMENTO_CURTO, TEMPOS_MEDIOS } from "@/lib/labels";
-import { excluirServicos, salvarServico, type ServicoInput } from "./actions";
+import { excluirServicos, salvarServico, type ServicoInput } from "../actions";
 
 type Servico = Tables<"cadastro_servicos">;
 

@@ -1,0 +1,67 @@
+import type { Metadata } from "next";
+import { Check } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
+import { Card } from "@/components/ui/card";
+import { date } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Meu Plano" };
+
+const INCLUSO = [
+  "Clientes, equipamentos e atendimentos ilimitados",
+  "Orçamentos e transformação em OS",
+  "PDF e mensagem para WhatsApp",
+  "Agenda, dashboard e relatórios",
+];
+
+export default async function MeuPlanoPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return (
+    <>
+      <PageHeader title="Meu Plano" description={user?.created_at ? `Conta criada em ${date(user.created_at.slice(0, 10))}` : ""} />
+      <Card className="grid max-w-[720px] gap-4 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-[15px] font-semibold">Gratuito</h2>
+            <p className="text-[13px] text-ink-subtle">Fase de testes</p>
+          </div>
+          <span className="inline-flex h-6 items-center rounded-full bg-success-bg px-2.5 text-xs font-medium text-success">
+            Ativo
+          </span>
+        </div>
+        <ul className="grid gap-2 text-sm">
+          {INCLUSO.map((i) => (
+            <li key={i} className="flex items-center gap-2">
+              <Check className="size-4 text-success" />
+              {i}
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-ink-muted">
+          Durante a fase de testes, todas as funções estão liberadas sem custo. O upgrade e o cancelamento ficam disponíveis aqui
+          quando a cobrança for ativada.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-10 items-center rounded-full border border-border px-4 text-sm font-medium text-ink-muted opacity-60"
+          >
+            Fazer upgrade (em breve)
+          </button>
+          <button
+            type="button"
+            disabled
+            className="inline-flex h-10 items-center rounded-full px-4 text-sm font-medium text-ink-muted opacity-60"
+          >
+            Cancelar conta (em breve)
+          </button>
+        </div>
+      </Card>
+    </>
+  );
+}

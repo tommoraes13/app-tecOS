@@ -1,26 +1,40 @@
 import {
   Briefcase,
   CalendarDays,
-  CircleUser,
   FileText,
+  FolderOpen,
   LayoutDashboard,
+  Tags,
   Users,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 
-export type NavItem = { href: string; label: string; icon: LucideIcon };
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  children?: { href: string; label: string }[];
+};
 
-/** Ordem do menu definida na Fase 1. A Tabela de Preços entra quando for construída. */
+/** Menu lateral. A Tabela de Preços entra quando for construída. */
 export const mainNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agenda", label: "Minha Agenda", icon: CalendarDays },
   { href: "/orcamentos", label: "Orçamentos", icon: FileText },
   { href: "/servicos", label: "Serviços Prestados", icon: Wrench },
   { href: "/clientes", label: "Clientes", icon: Users },
+  {
+    href: "/cadastros",
+    label: "Cadastros",
+    icon: FolderOpen,
+    children: [
+      { href: "/cadastros/servicos", label: "Cadastro de Serviços" },
+      { href: "/cadastros/produtos", label: "Cadastro de Produtos" },
+      { href: "/cadastros/templates", label: "Cadastro de Templates" },
+    ],
+  },
+  { href: "/precificacao", label: "Precificação", icon: Tags },
 ];
 
-export const secondaryNav: NavItem[] = [
-  { href: "/meu-negocio", label: "Meu Negócio", icon: Briefcase },
-  { href: "/minha-conta", label: "Minha Conta", icon: CircleUser },
-];
+export const secondaryNav: NavItem[] = [{ href: "/meu-negocio", label: "Meu Negócio", icon: Briefcase }];
