@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 const fieldBase =
@@ -103,7 +104,7 @@ export function Checkbox({
   );
 }
 
-/** Campo de dinheiro: digita só números e ele preenche os centavos (1250 → R$ 12,50). */
+/** Campo de dinheiro: digita só números e ele preenche os centavos (1250 → R$ 12,50). Usa a moeda do usuário. */
 export function MoneyInput({
   value,
   onChange,
@@ -119,8 +120,9 @@ export function MoneyInput({
   className?: string;
   "aria-label"?: string;
 }) {
+  const { fmt } = useI18n();
   const cents = Math.round((Number.isFinite(value) ? value : 0) * 100);
-  const display = (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const display = fmt.decimal(cents / 100);
   return (
     <div
       className={cn(
@@ -130,7 +132,7 @@ export function MoneyInput({
       )}
     >
       <span className="inline-flex h-7 items-center rounded-lg bg-surface-muted px-2.5 text-xs font-medium text-ink-muted">
-        R$
+        {fmt.currencySymbol}
       </span>
       <input
         id={id}

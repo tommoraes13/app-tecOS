@@ -6,11 +6,13 @@ import { gerarMensagemWhatsapp } from "@/app/(app)/servicos/whatsapp-action";
 import { Button } from "@/components/ui/button";
 import { Feedback, Textarea } from "@/components/ui/controls";
 import { Modal } from "@/components/ui/modal";
+import { useI18n } from "@/i18n/client";
 import { phone, whatsappLink } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** Botão "Mensagem para WhatsApp": prévia editável, copiar e enviar para o WhatsApp do cliente. */
 export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcamento"; id: string; className?: string }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [texto, setTexto] = useState("");
@@ -25,7 +27,7 @@ export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcament
     setLoading(true);
     const r = await gerarMensagemWhatsapp(tipo, id);
     setLoading(false);
-    if (!r.ok) return setErro(r.error);
+    if (!r.ok) return setErro(t(r.error));
     setTexto(r.data.texto);
     setTelefone(r.data.telefone);
     setCliente(r.data.cliente);
@@ -37,7 +39,7 @@ export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcament
       setCopiado(true);
       setTimeout(() => setCopiado(false), 1500);
     } catch {
-      setErro("Não foi possível copiar. Selecione o texto e copie manualmente.");
+      setErro(t("Não foi possível copiar. Selecione o texto e copie manualmente."));
     }
   }
 
@@ -54,17 +56,17 @@ export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcament
         )}
       >
         <MessageCircle className="size-4 text-brand-ink" />
-        Mensagem para WhatsApp
+        {t("Mensagem para WhatsApp")}
       </button>
 
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Mensagem para WhatsApp"
+        title={t("Mensagem para WhatsApp")}
         footer={
           <>
             <Button variant="outline" onClick={copiar} disabled={loading || !texto} icon={copiado ? <Check /> : <Copy />}>
-              {copiado ? "Copiado" : "Copiar texto"}
+              {copiado ? t("Copiado") : t("Copiar texto")}
             </Button>
             {link ? (
               <a
@@ -74,11 +76,11 @@ export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcament
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-action px-4 text-sm font-medium text-on-action lg:h-10"
               >
                 <MessageCircle className="size-4" />
-                Enviar para {cliente?.split(" ")[0] ?? "o cliente"}
+                {cliente ? t("Enviar para {nome}", { nome: cliente.split(" ")[0] }) : t("Enviar para o cliente")}
               </a>
             ) : (
               <Button variant="dark" disabled>
-                Cliente sem WhatsApp
+                {t("Cliente sem WhatsApp")}
               </Button>
             )}
           </>
@@ -86,16 +88,16 @@ export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcament
       >
         {loading ? (
           <p className="flex items-center gap-2 text-sm text-ink-subtle">
-            <Loader2 className="size-4 animate-spin" /> Montando a mensagem…
+            <Loader2 className="size-4 animate-spin" /> {t("Montando a mensagem…")}
           </p>
         ) : (
           <div className="grid gap-2">
             <p className="text-[13px] text-ink-subtle">
-              {telefone ? `Vai para ${phone(telefone)}.` : "Este cliente não tem telefone cadastrado."} Você pode editar o texto antes de
-              enviar.
+              {telefone ? t("Vai para {tel}.", { tel: phone(telefone) }) : t("Este cliente não tem telefone cadastrado.")}{" "}
+              {t("Você pode editar o texto antes de enviar.")}
             </p>
             <Textarea
-              aria-label="Texto da mensagem"
+              aria-label={t("Texto da mensagem")}
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               className="min-h-72 font-mono text-[13px] leading-5"

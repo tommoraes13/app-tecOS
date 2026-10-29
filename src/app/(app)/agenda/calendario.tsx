@@ -6,11 +6,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { VisitaItem } from "@/components/agenda/visita-item";
 import { Card } from "@/components/ui/card";
 import type { VisitaAgenda } from "@/lib/agenda";
-import { addDaysISO, date } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { addDaysISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-const SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 function shiftMes(mes: string, delta: number) {
   const [y, m] = mes.split("-").map(Number);
@@ -20,6 +19,9 @@ function shiftMes(mes: string, delta: number) {
 
 /** Calendário do mês com as visitas: as já realizadas ficam esmaecidas. */
 export function Calendario({ mes, hoje, visitas }: { mes: string; hoje: string; visitas: VisitaAgenda[] }) {
+  const { t, fmt } = useI18n();
+  const { date } = fmt;
+  const SEMANA = fmt.weekdaysShort();
   const [dia, setDia] = useState<string | null>(hoje.startsWith(mes) ? hoje : null);
   const [y, m] = mes.split("-").map(Number);
   const primeiro = `${mes}-01`;
@@ -35,25 +37,25 @@ export function Calendario({ mes, hoje, visitas }: { mes: string; hoje: string; 
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between gap-3 p-4">
         <h2 className="text-[15px] font-semibold">
-          {MESES[m - 1]} de {y}
+          {t("{mes} de {ano}", { mes: fmt.monthName(m), ano: y })}
         </h2>
         <div className="flex items-center gap-1">
           <Link
             href={`/agenda?mes=${hoje.slice(0, 7)}`}
             className="rounded-full px-3 py-1.5 text-[13px] font-medium text-ink-muted hover:bg-surface-muted"
           >
-            Hoje
+            {t("Hoje")}
           </Link>
           <Link
             href={`/agenda?mes=${shiftMes(mes, -1)}`}
-            aria-label="Mês anterior"
+            aria-label={t("Mês anterior")}
             className="inline-grid size-9 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface-muted"
           >
             <ChevronLeft className="size-4" />
           </Link>
           <Link
             href={`/agenda?mes=${shiftMes(mes, 1)}`}
-            aria-label="Próximo mês"
+            aria-label={t("Próximo mês")}
             className="inline-grid size-9 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface-muted"
           >
             <ChevronRight className="size-4" />
@@ -79,7 +81,7 @@ export function Calendario({ mes, hoje, visitas }: { mes: string; hoje: string; 
               key={d}
               type="button"
               onClick={() => setDia(d)}
-              aria-label={`${date(d)}: ${lista.length} ${lista.length === 1 ? "visita" : "visitas"}`}
+              aria-label={`${date(d)}: ${lista.length === 1 ? t("1 visita") : t("{n} visitas", { n: lista.length })}`}
               className={cn(
                 "flex min-h-14 flex-col items-stretch gap-1 border-r border-b border-border p-1.5 text-left last:border-r-0 sm:min-h-24 [&:nth-child(7n)]:border-r-0",
                 foraDoMes && "bg-surface-muted/50",
@@ -113,7 +115,7 @@ export function Calendario({ mes, hoje, visitas }: { mes: string; hoje: string; 
                         )}
                       >
                         {v.hora ? `${v.hora} ` : ""}
-                        {v.cliente ?? "OS"}
+                        {v.cliente ?? t("OS")}
                       </span>
                     ))}
                     {lista.length > 2 ? <span className="px-1 text-[11px] text-ink-subtle">+{lista.length - 2}</span> : null}
@@ -128,7 +130,8 @@ export function Calendario({ mes, hoje, visitas }: { mes: string; hoje: string; 
       {dia ? (
         <div className="border-t border-border">
           <h3 className="px-4 pt-4 pb-2 text-sm font-semibold">
-            {date(dia)} · {doDia.length === 0 ? "nenhuma visita" : `${doDia.length} ${doDia.length === 1 ? "visita" : "visitas"}`}
+            {date(dia)} ·{" "}
+            {doDia.length === 0 ? t("nenhuma visita") : doDia.length === 1 ? t("1 visita") : t("{n} visitas", { n: doDia.length })}
           </h3>
           {doDia.length > 0 ? (
             <div className="divide-y divide-border">
@@ -137,7 +140,7 @@ export function Calendario({ mes, hoje, visitas }: { mes: string; hoje: string; 
               ))}
             </div>
           ) : (
-            <p className="px-4 pb-4 text-[13px] text-ink-subtle">Escolha outro dia ou crie um atendimento.</p>
+            <p className="px-4 pb-4 text-[13px] text-ink-subtle">{t("Escolha outro dia ou crie um atendimento.")}</p>
           )}
         </div>
       ) : null}

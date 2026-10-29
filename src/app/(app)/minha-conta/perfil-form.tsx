@@ -3,11 +3,14 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Loader2, Trash2 } from "lucide-react";
+import { LOCALE_NAMES } from "@/components/layout/language-select";
 import { Avatar } from "@/components/layout/top-bar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Feedback, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
+import { useI18n } from "@/i18n/client";
+import { LOCALES } from "@/i18n/config";
 import type { Perfil } from "@/lib/perfil";
 import { createClient } from "@/lib/supabase/client";
 import { salvarFoto, salvarPerfil } from "./actions";
@@ -42,9 +45,11 @@ async function prepararFoto(file: File): Promise<Blob> {
 }
 
 export function PerfilForm({ perfil }: { perfil: Perfil }) {
+  const { t } = useI18n();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [nome, setNome] = useState(perfil.nome ?? "");
+  const [idioma, setIdioma] = useState(perfil.idioma);
   const [moeda, setMoeda] = useState(perfil.moeda);
   const [fuso, setFuso] = useState(perfil.fuso);
   const [foto, setFoto] = useState(perfil.fotoUrl);
@@ -64,7 +69,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
 
   async function trocarFoto(file: File) {
     setMsg(null);
-    if (!file.type.startsWith("image/")) return setMsg({ kind: "error", text: "Escolha uma imagem (JPG, PNG ou WEBP)." });
+    if (!file.type.startsWith("image/")) return setMsg({ kind: "error", text: t("Escolha uma imagem (JPG, PNG ou WEBP).") });
     setEnviando(true);
     try {
       const blob = await prepararFoto(file);
@@ -77,10 +82,10 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
       const r = await salvarFoto(path);
       if (!r.ok) throw new Error(r.error);
       setFoto(URL.createObjectURL(blob));
-      setMsg({ kind: "ok", text: "Foto atualizada." });
+      setMsg({ kind: "ok", text: t("Foto atualizada.") });
       router.refresh();
     } catch {
-      setMsg({ kind: "error", text: "Não foi possível enviar a foto agora. Tente outra imagem." });
+      setMsg({ kind: "error", text: t("Não foi possível enviar a foto agora. Tente outra imagem.") });
     } finally {
       setEnviando(false);
     }
@@ -89,7 +94,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
   function removerFoto() {
     start(async () => {
       const r = await salvarFoto(null);
-      if (!r.ok) return setMsg({ kind: "error", text: r.error });
+      if (!r.ok) return setMsg({ kind: "error", text: t(r.error) });
       setFoto(null);
       router.refresh();
     });
@@ -98,8 +103,8 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const r = await salvarPerfil({ nome_exibicao: nome, moeda, fuso });
-      setMsg(r.ok ? { kind: "ok", text: "Dados da conta salvos." } : { kind: "error", text: r.error });
+      const r = await salvarPerfil({ nome_exibicao: nome, idioma, moeda, fuso });
+      setMsg(r.ok ? { kind: "ok", text: t("Dados da conta salvos.") } : { kind: "error", text: t(r.error) });
       if (r.ok) router.refresh();
     });
   }
@@ -107,7 +112,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
   return (
     <Card className="p-5 sm:p-6">
       <form onSubmit={salvar} className="grid gap-5">
-        <h2 className="text-[15px] font-semibold">Perfil</h2>
+        <h2 className="text-[15px] font-semibold">{t("Perfil")}</h2>
 
         <div className="flex flex-wrap items-center gap-4">
           <Avatar user={{ nome, email: perfil.email, fotoUrl: foto }} size={72} />
@@ -129,11 +134,11 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
               disabled={enviando}
               icon={enviando ? <Loader2 className="animate-spin" /> : <Camera />}
             >
-              {enviando ? "Enviando…" : foto ? "Trocar foto" : "Enviar foto"}
+              {enviando ? t("Enviando…") : foto ? t("Trocar foto") : t("Enviar foto")}
             </Button>
             {foto ? (
               <Button variant="ghost" onClick={removerFoto} disabled={pending} icon={<Trash2 />}>
-                Remover
+                {t("Remover")}
               </Button>
             ) : null}
           </div>
@@ -141,28 +146,37 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Field label="Nome de exibição" htmlFor="pf-nome" hint="Aparece na saudação do Dashboard e no menu da conta">
-              <Input id="pf-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Exemplo: Everton" />
+            <Field label={t("Nome de exibição")} htmlFor="pf-nome" hint={t("Aparece na saudação do Dashboard e no menu da conta")}>
+              <Input id="pf-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder={t("Exemplo: Everton")} />
             </Field>
           </div>
-          <Field label="Moeda" htmlFor="pf-moeda">
-            <Select id="pf-moeda" value={moeda} onChange={(e) => setMoeda(e.target.value)}>
-              <option value="BRL">Real (R$)</option>
-              <option value="USD">Dólar (US$)</option>
-              <option value="EUR">Euro (€)</option>
+          <Field label={t("Idioma")} htmlFor="pf-idioma" hint={t("Idioma das telas, do PDF e das mensagens")}>
+            <Select id="pf-idioma" value={idioma} onChange={(e) => setIdioma(e.target.value)}>
+              {LOCALES.map((l) => (
+                <option key={l} value={l}>
+                  {LOCALE_NAMES[l]}
+                </option>
+              ))}
             </Select>
           </Field>
-          <Field label="Fuso horário" htmlFor="pf-fuso" hint="Usado para datas, agenda e saudação">
+          <Field label={t("Moeda")} htmlFor="pf-moeda">
+            <Select id="pf-moeda" value={moeda} onChange={(e) => setMoeda(e.target.value)}>
+              <option value="BRL">{t("Real (R$)")}</option>
+              <option value="USD">{t("Dólar (US$)")}</option>
+              <option value="EUR">{t("Euro (€)")}</option>
+            </Select>
+          </Field>
+          <Field label={t("Fuso horário")} htmlFor="pf-fuso" hint={t("Usado para datas, agenda e saudação")}>
             <Select id="pf-fuso" value={fuso} onChange={(e) => setFuso(e.target.value)}>
-              <optgroup label="Brasil">
+              <optgroup label={t("Brasil")}>
                 {FUSOS_BR.map(([v, l]) => (
                   <option key={v} value={v}>
-                    {l}
+                    {t(l)}
                   </option>
                 ))}
               </optgroup>
               {outrosFusos.length ? (
-                <optgroup label="Outros países">
+                <optgroup label={t("Outros países")}>
                   {outrosFusos.map((z) => (
                     <option key={z} value={z}>
                       {z.replace(/_/g, " ")}
@@ -178,7 +192,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
 
         <div className="flex justify-end">
           <Button type="submit" variant="dark" disabled={pending} className="w-full sm:w-auto">
-            {pending ? "Salvando…" : "Salvar perfil"}
+            {pending ? t("Salvando…") : t("Salvar perfil")}
           </Button>
         </div>
       </form>

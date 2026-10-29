@@ -1,26 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { LOCALE_COOKIE, normalizeCurrency, normalizeLocale, validTimeZone } from "@/i18n/config";
 import { fail, requireUser, txt, type ActionResult } from "@/lib/actions";
 
-export type PerfilInput = { nome_exibicao: string; moeda: string; fuso: string };
+export type PerfilInput = { nome_exibicao: string; idioma: string; moeda: string; fuso: string };
 
 export async function salvarPerfil(input: PerfilInput): Promise<ActionResult> {
   try {
     const { supabase, user } = await requireUser();
-    const moeda = ["BRL", "USD", "EUR"].includes(input.moeda) ? input.moeda : "BRL";
-    let fuso = "America/Sao_Paulo";
-    try {
-      new Intl.DateTimeFormat("pt-BR", { timeZone: input.fuso });
-      fuso = input.fuso;
-    } catch {
-      // fuso inválido: mantém o padrão
-    }
+    const idioma = normalizeLocale(input.idioma) ?? "pt-BR";
     const { error } = await supabase
       .from("perfil")
-      .update({ nome_exibicao: txt(input.nome_exibicao), moeda, fuso })
+      .update({
+        nome_exibicao: txt(input.nome_exibicao),
+        idioma,
+        moeda: normalizeCurrency(input.moeda),
+        fuso: validTimeZone(input.fuso),
+      })
       .eq("user_id", user.id);
     if (error) return fail(error);
+    (await cookies()).set(LOCALE_COOKIE, idioma, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
     revalidatePath("/", "layout");
     return { ok: true, data: null };
   } catch (e) {

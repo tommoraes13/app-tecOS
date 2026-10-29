@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Copy, Eye, EyeOff, Loader2 } from "lucide-react";
 import { revelarSenha } from "@/app/(app)/clientes/actions";
+import { useI18n } from "@/i18n/client";
 
 const iconBtn =
   "inline-grid size-9 shrink-0 place-items-center rounded-lg text-ink-subtle hover:bg-surface-muted hover:text-ink lg:size-8";
@@ -35,6 +36,7 @@ export function SecretInput({
   value: string | undefined;
   onChange: (value: string | undefined) => void;
 }) {
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function SecretInput({
     const r = await revelarSenha(equipamentoId, campo);
     setLoading(false);
     if (!r.ok) {
-      setError(r.error);
+      setError(t(r.error));
       return null;
     }
     onChange(r.data);
@@ -62,7 +64,7 @@ export function SecretInput({
           type={visible ? "text" : "password"}
           autoComplete="new-password"
           value={value ?? ""}
-          placeholder={saved && value === undefined ? "•••••••• (salva)" : ""}
+          placeholder={saved && value === undefined ? t("•••••••• (salva)") : ""}
           onChange={(e) => {
             setError(null);
             onChange(e.target.value);
@@ -73,7 +75,7 @@ export function SecretInput({
         <button
           type="button"
           className={iconBtn}
-          aria-label={visible ? "Esconder senha" : "Mostrar senha"}
+          aria-label={visible ? t("Esconder senha") : t("Mostrar senha")}
           onClick={async () => {
             if (!visible && (await load()) === null) return;
             setVisible((v) => !v);
@@ -84,7 +86,7 @@ export function SecretInput({
         <button
           type="button"
           className={iconBtn}
-          aria-label="Copiar senha"
+          aria-label={t("Copiar senha")}
           onClick={async () => {
             const v = await load();
             if (v && (await copiar(v))) {
@@ -103,6 +105,7 @@ export function SecretInput({
 
 /** Senha na ficha do equipamento (só leitura): mascarada, com mostrar e copiar. */
 export function SecretValue({ equipamentoId, campo }: { equipamentoId: string; campo: string }) {
+  const { t } = useI18n();
   const [plain, setPlain] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -115,7 +118,7 @@ export function SecretValue({ equipamentoId, campo }: { equipamentoId: string; c
     const r = await revelarSenha(equipamentoId, campo);
     setLoading(false);
     if (!r.ok) {
-      setError(r.error);
+      setError(t(r.error));
       return null;
     }
     setPlain(r.data);
@@ -129,7 +132,7 @@ export function SecretValue({ equipamentoId, campo }: { equipamentoId: string; c
       <button
         type="button"
         className="inline-grid size-7 place-items-center rounded-md text-ink-subtle hover:bg-surface hover:text-ink"
-        aria-label={visible ? "Esconder senha" : "Mostrar senha"}
+        aria-label={visible ? t("Esconder senha") : t("Mostrar senha")}
         onClick={async () => {
           if (!visible && (await load()) === null) return;
           setVisible((v) => !v);
@@ -140,7 +143,7 @@ export function SecretValue({ equipamentoId, campo }: { equipamentoId: string; c
       <button
         type="button"
         className="inline-grid size-7 place-items-center rounded-md text-ink-subtle hover:bg-surface hover:text-ink"
-        aria-label="Copiar senha"
+        aria-label={t("Copiar senha")}
         onClick={async () => {
           const v = await load();
           if (v && (await copiar(v))) {

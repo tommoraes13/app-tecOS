@@ -13,7 +13,8 @@ import { ConfirmDialog, Modal } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tag } from "@/components/ui/status-badge";
 import type { Enums, Tables } from "@/lib/database.types";
-import { duration, money, normalize } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { duration, normalize } from "@/lib/format";
 import { CATEGORIA_LABEL, EQUIPAMENTO_CURTO, TEMPOS_MEDIOS } from "@/lib/labels";
 import { excluirServicos, salvarServico, type ServicoInput } from "../actions";
 
@@ -47,6 +48,7 @@ function toInput(s: Servico): ServicoInput {
 const TIPOS_EQUIPAMENTO = Object.values(EQUIPAMENTO_CURTO);
 
 export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
+  const { t, fmt } = useI18n();
   const router = useRouter();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -66,7 +68,7 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
     if (!editing) return;
     start(async () => {
       const r = await salvarServico(editing);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       setEditing(null);
       router.refresh();
     });
@@ -75,7 +77,7 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
   function remove() {
     start(async () => {
       const r = await excluirServicos([...selected]);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       setConfirm(false);
       setSelected(new Set());
       router.refresh();
@@ -92,7 +94,7 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-        <SearchInput value={q} onChange={setQ} placeholder="Buscar serviço ou código" className="w-full sm:w-72" />
+        <SearchInput value={q} onChange={setQ} placeholder={t("Buscar serviço ou código")} className="w-full sm:w-72" />
         <Button
           variant="dark"
           icon={<Plus />}
@@ -102,24 +104,24 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
           }}
           className="w-full sm:w-auto"
         >
-          Novo serviço
+          {t("Novo serviço")}
         </Button>
       </div>
 
       {servicos.length === 0 ? (
         <EmptyState
           icon={Wrench}
-          title="Nenhum serviço cadastrado"
-          description="Cadastre os serviços que você mais faz. Eles aparecem para escolher na OS, já com valor e tempo médio."
+          title={t("Nenhum serviço cadastrado")}
+          description={t("Cadastre os serviços que você mais faz. Eles aparecem para escolher na OS, já com valor e tempo médio.")}
         />
       ) : list.length === 0 ? (
-        <p className="px-4 pb-6 text-center text-sm text-ink-subtle">Nenhum serviço encontrado para “{q}”.</p>
+        <p className="px-4 pb-6 text-center text-sm text-ink-subtle">{t("Nenhum serviço encontrado para “{q}”.", { q })}</p>
       ) : (
         <ul className="divide-y divide-border border-t border-border">
           {list.map((s) => (
             <li key={s.id} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted">
               <Checkbox
-                aria-label={`Selecionar ${s.nome}`}
+                aria-label={t("Selecionar {nome}", { nome: s.nome })}
                 checked={selected.has(s.id)}
                 onChange={() => setSelected((set) => toggleId(set, s.id))}
               />
@@ -134,14 +136,14 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{s.nome}</span>
                   <span className="block text-xs text-ink-subtle">
-                    {[s.codigo, s.categoria ? CATEGORIA_LABEL[s.categoria] : null].filter(Boolean).join(" · ")}
+                    {[s.codigo, s.categoria ? t(CATEGORIA_LABEL[s.categoria]) : null].filter(Boolean).join(" · ")}
                   </span>
                 </span>
-                {s.tipo_equipamento ? <Tag>{s.tipo_equipamento}</Tag> : null}
+                {s.tipo_equipamento ? <Tag>{t(s.tipo_equipamento)}</Tag> : null}
                 <span className="w-14 text-right text-[13px] text-ink-subtle tabular-nums">
                   {s.tempo_medio_min ? duration(s.tempo_medio_min) : ""}
                 </span>
-                <span className="w-24 text-right font-medium tabular-nums">{money(s.valor)}</span>
+                <span className="w-24 text-right font-medium tabular-nums">{fmt.money(s.valor)}</span>
               </button>
             </li>
           ))}
@@ -153,14 +155,14 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
       <Modal
         open={editing !== null}
         onClose={() => setEditing(null)}
-        title={editing?.id ? "Editar serviço" : "Novo serviço"}
+        title={editing?.id ? t("Editar serviço") : t("Novo serviço")}
         footer={
           <>
             <Button variant="ghost" onClick={() => setEditing(null)}>
-              Cancelar
+              {t("Cancelar")}
             </Button>
             <Button variant="dark" onClick={save} disabled={pending}>
-              {pending ? "Salvando…" : "Salvar serviço"}
+              {pending ? t("Salvando…") : t("Salvar serviço")}
             </Button>
           </>
         }
@@ -168,17 +170,17 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
         {editing ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Field label="Nome do serviço" required htmlFor="sv-nome">
+              <Field label={t("Nome do serviço")} required htmlFor="sv-nome">
                 <Input
                   id="sv-nome"
                   autoFocus
-                  placeholder="Exemplo: Formatação com backup"
+                  placeholder={t("Exemplo: Formatação com backup")}
                   value={editing.nome}
                   onChange={(e) => set({ nome: e.target.value })}
                 />
               </Field>
             </div>
-            <Field label="Código interno" htmlFor="sv-cod">
+            <Field label={t("Código interno")} htmlFor="sv-cod">
               <div className="flex gap-2">
                 <Input
                   id="sv-cod"
@@ -192,54 +194,54 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
                     set({ codigo: nextCode("SV", servicos.filter((s) => s.id !== editing.id).map((s) => s.codigo)) })
                   }
                 >
-                  Gerar
+                  {t("Gerar")}
                 </Button>
               </div>
             </Field>
-            <Field label="Tipo de serviço" htmlFor="sv-cat">
+            <Field label={t("Tipo de serviço")} htmlFor="sv-cat">
               <Select
                 id="sv-cat"
                 value={editing.categoria}
                 onChange={(e) => set({ categoria: e.target.value as Enums<"servico_categoria"> | "" })}
               >
-                <option value="">Sem categoria</option>
+                <option value="">{t("Sem categoria")}</option>
                 {Object.entries(CATEGORIA_LABEL).map(([v, l]) => (
                   <option key={v} value={v}>
-                    {l}
+                    {t(l)}
                   </option>
                 ))}
               </Select>
             </Field>
             {editing.categoria === "backup_recuperacao" ? (
               <>
-                <Field label="Tamanho do backup" htmlFor="sv-tb">
+                <Field label={t("Tamanho do backup")} htmlFor="sv-tb">
                   <Input
                     id="sv-tb"
-                    placeholder="Exemplo: até 500 GB"
+                    placeholder={t("Exemplo: até 500 GB")}
                     value={editing.tamanho_backup}
                     onChange={(e) => set({ tamanho_backup: e.target.value })}
                   />
                 </Field>
-                <Field label="Localização e pastas" htmlFor="sv-lp">
+                <Field label={t("Localização e pastas")} htmlFor="sv-lp">
                   <Input
                     id="sv-lp"
-                    placeholder="Exemplo: Documentos, Fotos"
+                    placeholder={t("Exemplo: Documentos, Fotos")}
                     value={editing.localizacao_pastas}
                     onChange={(e) => set({ localizacao_pastas: e.target.value })}
                   />
                 </Field>
               </>
             ) : null}
-            <Field label="Valor do serviço" htmlFor="sv-valor">
+            <Field label={t("Valor do serviço")} htmlFor="sv-valor">
               <MoneyInput id="sv-valor" value={editing.valor} onChange={(v) => set({ valor: v })} />
             </Field>
-            <Field label="Tempo médio" htmlFor="sv-tempo" hint="Soma na duração sugerida da visita">
+            <Field label={t("Tempo médio")} htmlFor="sv-tempo" hint={t("Soma na duração sugerida da visita")}>
               <Select
                 id="sv-tempo"
                 value={editing.tempo_medio_min ?? ""}
                 onChange={(e) => set({ tempo_medio_min: e.target.value ? Number(e.target.value) : null })}
               >
-                <option value="">Não informado</option>
+                <option value="">{t("Não informado")}</option>
                 {tempos.map((m) => (
                   <option key={m} value={m}>
                     {duration(m)}
@@ -248,26 +250,26 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
               </Select>
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Tipo de equipamento" htmlFor="sv-te">
+              <Field label={t("Tipo de equipamento")} htmlFor="sv-te">
                 <Select
                   id="sv-te"
                   value={tipoOutro ? "__outro" : editing.tipo_equipamento}
                   onChange={(e) => set({ tipo_equipamento: e.target.value === "__outro" ? " " : e.target.value })}
                 >
-                  <option value="">Qualquer equipamento</option>
-                  {TIPOS_EQUIPAMENTO.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  <option value="">{t("Qualquer equipamento")}</option>
+                  {TIPOS_EQUIPAMENTO.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {t(tipo)}
                     </option>
                   ))}
-                  <option value="__outro">Outro (digitar)</option>
+                  <option value="__outro">{t("Outro (digitar)")}</option>
                 </Select>
               </Field>
               {tipoOutro ? (
                 <Input
                   className="mt-2"
-                  aria-label="Outro tipo de equipamento"
-                  placeholder="Exemplo: Celular"
+                  aria-label={t("Outro tipo de equipamento")}
+                  placeholder={t("Exemplo: Celular")}
                   value={editing.tipo_equipamento.trimStart()}
                   onChange={(e) => set({ tipo_equipamento: e.target.value || " " })}
                 />
@@ -287,11 +289,10 @@ export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
         onClose={() => setConfirm(false)}
         onConfirm={remove}
         pending={pending}
-        title={selected.size === 1 ? "Excluir serviço?" : `Excluir ${selected.size} serviços?`}
+        title={selected.size === 1 ? t("Excluir serviço?") : t("Excluir {n} serviços?", { n: selected.size })}
         description={
           <>
-            Eles saem do catálogo. Atendimentos e orçamentos que já usaram esses serviços continuam com o nome e o valor
-            registrados.
+            {t("Eles saem do catálogo. Atendimentos e orçamentos que já usaram esses serviços continuam com o nome e o valor registrados.")}
             {error ? <span className="mt-2 block text-danger">{error}</span> : null}
           </>
         }

@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search, X } from "lucide-react";
 import { normalize } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 export type ComboItem = { id: string; label: string; sublabel?: string; right?: string; search?: string };
@@ -17,8 +18,8 @@ export function Combobox({
   onSelect,
   onFree,
   freeLabel,
-  placeholder = "Buscar",
-  emptyText = "Nada encontrado",
+  placeholder,
+  emptyText,
   id,
   autoFocus,
 }: {
@@ -32,6 +33,7 @@ export function Combobox({
   id?: string;
   autoFocus?: boolean;
 }) {
+  const { t } = useI18n();
   const listId = useId();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -48,8 +50,8 @@ export function Combobox({
   }, [open]);
 
   const filtered = useMemo(() => {
-    const t = normalize(q);
-    const list = t ? items.filter((i) => normalize(`${i.label} ${i.sublabel ?? ""} ${i.search ?? ""}`).includes(t)) : items;
+    const term = normalize(q);
+    const list = term ? items.filter((i) => normalize(`${i.label} ${i.sublabel ?? ""} ${i.search ?? ""}`).includes(term)) : items;
     return list.slice(0, 50);
   }, [items, q]);
 
@@ -75,7 +77,7 @@ export function Combobox({
           aria-controls={listId}
           autoComplete="off"
           value={open ? q : valueLabel}
-          placeholder={valueLabel || placeholder}
+          placeholder={valueLabel || placeholder || t("Buscar")}
           onFocus={() => {
             setOpen(true);
             setQ("");
@@ -105,7 +107,7 @@ export function Combobox({
         {valueLabel && !open ? (
           <button
             type="button"
-            aria-label="Limpar"
+            aria-label={t("Limpar")}
             onClick={() => onSelect(null)}
             className="inline-grid size-7 place-items-center rounded-md text-ink-subtle hover:bg-surface-muted"
           >
@@ -152,11 +154,11 @@ export function Combobox({
                   active === filtered.length && "bg-surface-muted",
                 )}
               >
-                {freeLabel ? freeLabel(q.trim()) : `Usar “${q.trim()}”`}
+                {freeLabel ? freeLabel(q.trim()) : t("Usar “{texto}”", { texto: q.trim() })}
               </button>
             </li>
           ) : null}
-          {total === 0 ? <li className="px-3 py-2 text-sm text-ink-subtle">{emptyText}</li> : null}
+          {total === 0 ? <li className="px-3 py-2 text-sm text-ink-subtle">{emptyText ?? t("Nada encontrado")}</li> : null}
         </ul>
       ) : null}
     </div>

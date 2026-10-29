@@ -4,7 +4,8 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, HardDrive, Laptop, Monitor, Pencil, Printer, Router } from "lucide-react";
 import type { Tables } from "@/lib/database.types";
 import { asSpecs, CAMPOS, resumoEquipamento, secretKeys, type TipoEquipamento } from "@/lib/equipamentos";
-import { date } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { docNumber } from "@/lib/format";
 import { EQUIPAMENTO_CURTO, ESTADO_LABEL } from "@/lib/labels";
 import { Tag } from "@/components/ui/status-badge";
 import { SecretValue } from "./secret-field";
@@ -29,6 +30,7 @@ export function EquipamentoCard({
   historico: HistoricoItem[];
   onEdit: () => void;
 }) {
+  const { t, fmt } = useI18n();
   const [open, setOpen] = useState(false);
   const specs = asSpecs(equipamento.especificacoes);
   const secrets = new Set(secretKeys(equipamento.senhas));
@@ -46,13 +48,13 @@ export function EquipamentoCard({
         <button type="button" onClick={() => setOpen((o) => !o)} className="min-w-0 flex-1 text-left">
           <span className="block truncate text-sm font-semibold">{equipamento.nome}</span>
           <span className="block truncate text-xs text-ink-subtle">
-            {[EQUIPAMENTO_CURTO[equipamento.tipo], resumoEquipamento(equipamento.tipo, specs)].filter(Boolean).join(" · ")}
+            {[t(EQUIPAMENTO_CURTO[equipamento.tipo]), resumoEquipamento(equipamento.tipo, specs, t)].filter(Boolean).join(" · ")}
           </span>
         </button>
         <button
           type="button"
           onClick={onEdit}
-          aria-label={`Editar ${equipamento.nome}`}
+          aria-label={t("Editar {nome}", { nome: equipamento.nome })}
           className="inline-grid size-9 place-items-center rounded-md text-ink-subtle hover:bg-surface hover:text-ink"
         >
           <Pencil className="size-4" />
@@ -60,7 +62,7 @@ export function EquipamentoCard({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          aria-label={open ? "Recolher" : "Ver detalhes"}
+          aria-label={open ? t("Recolher") : t("Ver detalhes")}
           className="inline-grid size-9 place-items-center rounded-md text-ink-subtle hover:bg-surface hover:text-ink"
         >
           {open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
@@ -71,7 +73,7 @@ export function EquipamentoCard({
         <div className="space-y-3 border-t border-border px-3 pt-3 pb-3">
           {equipamento.estado_geral ? (
             <p className="text-[13px]">
-              <Tag>{ESTADO_LABEL[equipamento.estado_geral]}</Tag>
+              <Tag>{t(ESTADO_LABEL[equipamento.estado_geral])}</Tag>
               {equipamento.estado_detalhe ? <span className="ml-2 text-ink-muted">{equipamento.estado_detalhe}</span> : null}
             </p>
           ) : null}
@@ -80,39 +82,41 @@ export function EquipamentoCard({
             <dl className="grid grid-cols-[minmax(0,140px)_1fr] gap-x-3 gap-y-1.5 text-[13px]">
               {campos.map((c) => (
                 <div key={c.key} className="contents">
-                  <dt className="text-ink-subtle">{c.label}</dt>
+                  <dt className="text-ink-subtle">{t(c.label)}</dt>
                   <dd className="min-w-0 break-words">
                     {c.kind === "secret" ? (
                       <SecretValue equipamentoId={equipamento.id} campo={c.key} />
                     ) : c.kind === "toggle" ? (
                       specs[c.key] === true ? (
-                        "Sim"
+                        t("Sim")
                       ) : (
-                        "Não"
+                        t("Não")
                       )
                     ) : (
-                      <span className={c.kind === "mono" ? "font-mono" : undefined}>{String(specs[c.key])}</span>
+                      <span className={c.kind === "mono" ? "font-mono" : undefined}>
+                        {c.kind === "select" ? t(String(specs[c.key])) : String(specs[c.key])}
+                      </span>
                     )}
                   </dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <p className="text-[13px] text-ink-subtle">Nenhum detalhe preenchido.</p>
+            <p className="text-[13px] text-ink-subtle">{t("Nenhum detalhe preenchido.")}</p>
           )}
 
           <div>
-            <h4 className="mb-1 text-xs font-semibold text-ink-muted">Serviços realizados</h4>
+            <h4 className="mb-1 text-xs font-semibold text-ink-muted">{t("Serviços realizados")}</h4>
             {historico.length === 0 ? (
-              <p className="text-[13px] text-ink-subtle">Nenhum serviço registrado neste equipamento.</p>
+              <p className="text-[13px] text-ink-subtle">{t("Nenhum serviço registrado neste equipamento.")}</p>
             ) : (
               <ul className="space-y-1 text-[13px]">
                 {historico.map((h, i) => (
                   <li key={i} className="flex justify-between gap-3">
                     <span className="min-w-0 truncate">{h.descricao}</span>
                     <span className="shrink-0 text-ink-subtle tabular-nums">
-                      {h.numero ? <span className="font-mono">OS {String(h.numero).padStart(5, "0")}</span> : null}
-                      {h.data ? ` · ${date(h.data)}` : ""}
+                      {h.numero ? <span className="font-mono">{t("OS {n}", { n: docNumber(h.numero) })}</span> : null}
+                      {h.data ? ` · ${fmt.date(h.data)}` : ""}
                     </span>
                   </li>
                 ))}

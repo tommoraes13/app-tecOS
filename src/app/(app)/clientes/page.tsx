@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { addMonthsISO, todayISO } from "@/lib/format";
+import { getI18n, pageTitle } from "@/i18n/server";
+import { addMonthsISO } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { ClientesList, type ResumoClientes } from "./clientes-list";
 
-export const metadata: Metadata = { title: "Clientes" };
+export const generateMetadata: () => Promise<Metadata> = pageTitle("Clientes");
 
 export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ abrir?: string }> }) {
   const { abrir } = await searchParams;
@@ -14,7 +15,7 @@ export default async function ClientesPage({ searchParams }: { searchParams: Pro
     supabase.from("base_orcamentos").select("id").limit(5000),
   ]);
 
-  const hoje = todayISO();
+  const hoje = (await getI18n()).fmt.today();
   const oss = os.data ?? [];
   const emGarantia = new Set<string>();
   for (const o of oss) {

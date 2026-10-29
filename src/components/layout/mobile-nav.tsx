@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 import { NavList } from "./nav-list";
 import { Wordmark } from "./wordmark";
 
 /** Barra superior com menu hambúrguer, abaixo de 1024px (Design System > Sidebar). */
 export function MobileNav({ actions }: { actions?: React.ReactNode }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -33,7 +35,7 @@ export function MobileNav({ actions }: { actions?: React.ReactNode }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Abrir menu"
+          aria-label={t("Abrir menu")}
           aria-expanded={open}
           className="inline-grid size-10 place-items-center rounded-md border border-border text-ink-muted"
         >
@@ -45,10 +47,10 @@ export function MobileNav({ actions }: { actions?: React.ReactNode }) {
       </header>
 
       {open ? (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label={t("Menu")}>
           <button
             type="button"
-            aria-label="Fechar menu"
+            aria-label={t("Fechar menu")}
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-overlay"
           />
@@ -58,7 +60,7 @@ export function MobileNav({ actions }: { actions?: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Fechar menu"
+                aria-label={t("Fechar menu")}
                 className="inline-grid size-10 place-items-center rounded-md text-ink-muted hover:bg-surface-muted"
               >
                 <X className="size-5" />

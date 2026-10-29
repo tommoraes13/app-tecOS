@@ -26,7 +26,8 @@ import {
   type DocForm,
   type Padroes,
 } from "@/lib/documento";
-import { docNumber, duration, money, phone, todayISO } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { docNumber, duration, phone } from "@/lib/format";
 import { DURACOES, EQUIPAMENTO_CURTO } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,8 @@ export function DocumentoForm({
   orcamentoOrigem?: Vinculo;
   osGerada?: Vinculo;
 }) {
+  const { t, fmt } = useI18n();
+  const { money } = fmt;
   const router = useRouter();
   const isOS = mode === "os";
   const [form, setForm] = useState<DocForm>(initial);
@@ -99,9 +102,9 @@ export function DocumentoForm({
     void loadEquipamentos(form.cliente_id);
   }, [form.cliente_id, loadEquipamentos]);
 
-  const t = totais(form);
+  const tot = totais(form);
   const cliente = clientes.find((c) => c.id === form.cliente_id) ?? null;
-  const equipOptions = equipamentos.map((e) => ({ id: e.id, nome: `${e.nome} (${EQUIPAMENTO_CURTO[e.tipo]})` }));
+  const equipOptions = equipamentos.map((e) => ({ id: e.id, nome: `${e.nome} (${t(EQUIPAMENTO_CURTO[e.tipo])})` }));
   const catServicos = useMemo(
     () => servicos.map((s) => ({ id: s.id, nome: s.nome, codigo: s.codigo, valor: s.valor, tempo_min: s.tempo_medio_min })),
     [servicos],
@@ -127,20 +130,18 @@ export function DocumentoForm({
   function salvar() {
     start(async () => {
       const r = isOS ? await salvarAtendimento(form) : await salvarOrcamento(form);
-      if (!r.ok) return setFeedback({ kind: "error", text: r.error });
-      afterSave(r.data.id, r.data.numero, isOS ? "Atendimento salvo." : "Orçamento salvo.");
+      if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
+      afterSave(r.data.id, r.data.numero, isOS ? t("Atendimento salvo.") : t("Orçamento salvo."));
     });
   }
 
   function finalizar() {
     start(async () => {
       const r = await finalizarAtendimento(form);
-      if (!r.ok) return setFeedback({ kind: "error", text: r.error });
+      if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
       const msg =
-        r.data.status === "finalizado"
-          ? "OS finalizada."
-          : "OS concluída e marcada como Aguardando Pagamento.";
-      setForm((f) => ({ ...f, status: r.data.status, data_entrega: f.data_entrega || todayISO() }));
+        r.data.status === "finalizado" ? t("OS finalizada.") : t("OS concluída e marcada como Aguardando Pagamento.");
+      setForm((f) => ({ ...f, status: r.data.status, data_entrega: f.data_entrega || fmt.today() }));
       afterSave(r.data.id, r.data.numero, msg);
     });
   }
@@ -148,16 +149,18 @@ export function DocumentoForm({
   function transformar() {
     start(async () => {
       const r = await transformarEmAtendimento(form);
-      if (!r.ok) return setFeedback({ kind: "error", text: r.error });
+      if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
       router.push(`/servicos/${r.data.osId}`);
     });
   }
 
   const titulo = form.id
-    ? `${isOS ? "OS" : "Orçamento"} ${docNumber(form.numero)}`
+    ? isOS
+      ? t("OS {n}", { n: docNumber(form.numero) })
+      : t("Orçamento {n}", { n: docNumber(form.numero) })
     : isOS
-      ? "Novo atendimento"
-      : "Novo orçamento";
+      ? t("Novo atendimento")
+      : t("Novo orçamento");
 
   const acoes = (
     <div className="grid gap-2">
@@ -168,28 +171,28 @@ export function DocumentoForm({
         <>
           {!finalizado ? (
             <Button variant="dark" onClick={finalizar} disabled={pending} icon={<CheckCircle2 />}>
-              Finalizar OS
+              {t("Finalizar OS")}
             </Button>
           ) : null}
           <Button variant={finalizado ? "dark" : "outline"} onClick={salvar} disabled={pending}>
-            {pending ? "Salvando…" : "Salvar atendimento"}
+            {pending ? t("Salvando…") : t("Salvar atendimento")}
           </Button>
         </>
       ) : (
         <>
           <Button variant="dark" onClick={salvar} disabled={pending}>
-            {pending ? "Salvando…" : "Salvar orçamento"}
+            {pending ? t("Salvando…") : t("Salvar orçamento")}
           </Button>
           {osGerada ? (
             <Link
               href={`/servicos/${osGerada.id}`}
               className="rounded-md bg-surface-muted px-3 py-2 text-center text-[13px] font-medium text-brand-ink"
             >
-              Já virou o atendimento OS {docNumber(osGerada.numero)} →
+              {t("Já virou o atendimento OS {n} →", { n: docNumber(osGerada.numero) })}
             </Link>
           ) : (
             <Button variant="outline" onClick={transformar} disabled={pending}>
-              Transformar em atendimento
+              {t("Transformar em atendimento")}
             </Button>
           )}
         </>
@@ -202,7 +205,7 @@ export function DocumentoForm({
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Link
           href={base}
-          aria-label="Voltar"
+          aria-label={t("Voltar")}
           className="inline-grid size-10 place-items-center rounded-md border border-border bg-surface text-ink-muted hover:text-ink"
         >
           <ArrowLeft className="size-4" />
@@ -212,8 +215,8 @@ export function DocumentoForm({
             {titulo}
           </h1>
           <p className="text-[13px] text-ink-subtle">
-            {cliente ? cliente.nome : form.id ? "Cliente não definido" : "Preencha os dados e salve"}
-            {orcamentoOrigem ? ` · criado do orçamento ${docNumber(orcamentoOrigem.numero)}` : ""}
+            {cliente ? cliente.nome : form.id ? t("Cliente não definido") : t("Preencha os dados e salve")}
+            {orcamentoOrigem ? ` · ${t("criado do orçamento {n}", { n: docNumber(orcamentoOrigem.numero) })}` : ""}
           </p>
         </div>
         {isOS && form.id ? <StatusBadge status={form.status} /> : null}
@@ -225,7 +228,7 @@ export function DocumentoForm({
           <Card className="grid gap-4 p-5">
             <div className="grid gap-3 sm:grid-cols-6">
               <div className="sm:col-span-2">
-                <Field label={isOS ? "Número da OS" : "Número do orçamento"} required htmlFor="doc-num">
+                <Field label={isOS ? t("Número da OS") : t("Número do orçamento")} required htmlFor="doc-num">
                   <Input
                     id="doc-num"
                     inputMode="numeric"
@@ -239,7 +242,7 @@ export function DocumentoForm({
                 </Field>
               </div>
               <div className="sm:col-span-4">
-                <Field label="Cliente" required htmlFor="doc-cliente">
+                <Field label={t("Cliente")} required htmlFor="doc-cliente">
                   <div className="flex gap-2">
                     <div className="min-w-0 flex-1">
                       <Combobox
@@ -251,9 +254,9 @@ export function DocumentoForm({
                           search: c.telefone,
                         }))}
                         valueLabel={cliente?.nome ?? ""}
-                        placeholder="Buscar cliente pelo nome"
-                        emptyText="Nenhum cliente encontrado"
-                        freeLabel={(text) => `Cadastrar “${text}” como novo cliente`}
+                        placeholder={t("Buscar cliente pelo nome")}
+                        emptyText={t("Nenhum cliente encontrado")}
+                        freeLabel={(text) => t("Cadastrar “{nome}” como novo cliente", { nome: text })}
                         onFree={(text) => setClienteModal(text)}
                         onSelect={(item) => {
                           set({ cliente_id: item?.id ?? null, equipamentos: [] });
@@ -263,7 +266,7 @@ export function DocumentoForm({
                     <button
                       type="button"
                       onClick={() => setClienteModal("")}
-                      aria-label="Cadastrar cliente"
+                      aria-label={t("Cadastrar cliente")}
                       className="inline-grid size-11 shrink-0 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface-muted lg:size-10"
                     >
                       <Plus className="size-4" />
@@ -272,14 +275,14 @@ export function DocumentoForm({
                 </Field>
               </div>
               <div className="sm:col-span-2">
-                <Field label={isOS ? "Data de início" : "Data"} required htmlFor="doc-data">
+                <Field label={isOS ? t("Data de início") : t("Data")} required htmlFor="doc-data">
                   <Input id="doc-data" type="date" value={form.data} onChange={(e) => set({ data: e.target.value })} />
                 </Field>
               </div>
               {isOS ? (
                 <>
                   <div className="sm:col-span-2">
-                    <Field label="Status" htmlFor="doc-status">
+                    <Field label={t("Status")} htmlFor="doc-status">
                       <Select
                         id="doc-status"
                         value={form.status}
@@ -287,14 +290,14 @@ export function DocumentoForm({
                       >
                         {STATUS_OPCOES.map((s) => (
                           <option key={s.value} value={s.value}>
-                            {s.label}
+                            {t(s.label)}
                           </option>
                         ))}
                       </Select>
                     </Field>
                   </div>
                   <div className="sm:col-span-2">
-                    <Field label="Data da entrega" htmlFor="doc-entrega" hint="Vazia: preenche ao finalizar">
+                    <Field label={t("Data da entrega")} htmlFor="doc-entrega" hint={t("Vazia: preenche ao finalizar")}>
                       <Input
                         id="doc-entrega"
                         type="date"
@@ -306,10 +309,10 @@ export function DocumentoForm({
                 </>
               ) : null}
             </div>
-            <Field label="Relato do cliente" htmlFor="doc-relato">
+            <Field label={t("Relato do cliente")} htmlFor="doc-relato">
               <Textarea
                 id="doc-relato"
-                placeholder="O que o cliente contou sobre o problema"
+                placeholder={t("O que o cliente contou sobre o problema")}
                 value={form.relato}
                 onChange={(e) => set({ relato: e.target.value })}
               />
@@ -319,10 +322,10 @@ export function DocumentoForm({
           {/* Visitas técnicas */}
           {isOS ? (
             <CollapsibleSection
-              title="Visitas técnicas"
+              title={t("Visitas técnicas")}
               enabled={false}
               alwaysOn
-              summary={`${form.visitas.length} ${form.visitas.length === 1 ? "visita" : "visitas"} · ${duration(
+              summary={`${form.visitas.length === 1 ? t("1 visita") : t("{n} visitas", { n: form.visitas.length })} · ${duration(
                 form.visitas.reduce((s, v) => s + v.duracao_min, 0),
               )}`}
             >
@@ -332,7 +335,7 @@ export function DocumentoForm({
                   : [...DURACOES, v.duracao_min].sort((a, b) => a - b);
                 return (
                   <div key={v.key} className="grid gap-3 rounded-lg bg-surface-muted p-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
-                    <Field label={`Visita ${i + 1}`} htmlFor={`${v.key}-data`}>
+                    <Field label={t("Visita {n}", { n: i + 1 })} htmlFor={`${v.key}-data`}>
                       <Input
                         id={`${v.key}-data`}
                         type="date"
@@ -345,7 +348,7 @@ export function DocumentoForm({
                         }
                       />
                     </Field>
-                    <Field label="Horário" htmlFor={`${v.key}-hora`}>
+                    <Field label={t("Horário")} htmlFor={`${v.key}-hora`}>
                       <Input
                         id={`${v.key}-hora`}
                         type="time"
@@ -358,7 +361,7 @@ export function DocumentoForm({
                         }
                       />
                     </Field>
-                    <Field label="Duração" htmlFor={`${v.key}-dur`}>
+                    <Field label={t("Duração")} htmlFor={`${v.key}-dur`}>
                       <Select
                         id={`${v.key}-dur`}
                         value={v.duracao_min}
@@ -380,7 +383,7 @@ export function DocumentoForm({
                     </Field>
                     <button
                       type="button"
-                      aria-label="Remover visita"
+                      aria-label={t("Remover visita")}
                       disabled={form.visitas.length === 1}
                       onClick={() => update((f) => ({ ...f, visitas: f.visitas.filter((x) => x.key !== v.key) }))}
                       className="inline-grid size-11 place-items-center rounded-md border border-border bg-surface text-ink-subtle hover:text-danger disabled:opacity-40 lg:size-10"
@@ -400,12 +403,12 @@ export function DocumentoForm({
                       ...f,
                       visitas: [
                         ...f.visitas,
-                        { key: newKey(), data: todayISO(), hora: "", duracao_min: padroes.duracao_visita_min, auto: false },
+                        { key: newKey(), data: fmt.today(), hora: "", duracao_min: padroes.duracao_visita_min, auto: false },
                       ],
                     }))
                   }
                 >
-                  Adicionar visita
+                  {t("Adicionar visita")}
                 </Button>
                 {form.visitas[0] && !form.visitas[0].auto && form.visitas[0].duracao_min !== sugestao ? (
                   <button
@@ -418,13 +421,13 @@ export function DocumentoForm({
                       }))
                     }
                   >
-                    Usar duração sugerida ({duration(sugestao)})
+                    {t("Usar duração sugerida ({tempo})", { tempo: duration(sugestao) })}
                   </button>
                 ) : (
-                  <span className="text-xs text-ink-subtle">Sugestão: visita padrão + tempo médio dos serviços</span>
+                  <span className="text-xs text-ink-subtle">{t("Sugestão: visita padrão + tempo médio dos serviços")}</span>
                 )}
               </div>
-              <Field label="Distância (km)" htmlFor="doc-km" hint="Cálculo automático em breve; por enquanto, digite">
+              <Field label={t("Distância (km)")} htmlFor="doc-km" hint={t("Cálculo automático em breve; por enquanto, digite")}>
                 <Input
                   id="doc-km"
                   inputMode="decimal"
@@ -442,7 +445,7 @@ export function DocumentoForm({
           {/* Equipamentos */}
           {isOS ? (
             <CollapsibleSection
-              title="Equipamentos"
+              title={t("Equipamentos")}
               enabled={equipAtivos}
               onEnabledChange={(v) => {
                 setEquipAtivos(v);
@@ -450,16 +453,18 @@ export function DocumentoForm({
               }}
               summary={
                 form.equipamentos.length
-                  ? `${form.equipamentos.length} ${form.equipamentos.length === 1 ? "equipamento" : "equipamentos"}`
-                  : "Nenhum equipamento"
+                  ? form.equipamentos.length === 1
+                    ? t("1 equipamento")
+                    : t("{n} equipamentos", { n: form.equipamentos.length })
+                  : t("Nenhum equipamento")
               }
             >
               {!form.cliente_id ? (
-                <p className="text-[13px] text-ink-subtle">Escolha o cliente para ver os equipamentos dele.</p>
+                <p className="text-[13px] text-ink-subtle">{t("Escolha o cliente para ver os equipamentos dele.")}</p>
               ) : (
                 <>
                   {equipamentos.length === 0 ? (
-                    <p className="text-[13px] text-ink-subtle">Este cliente ainda não tem equipamentos cadastrados.</p>
+                    <p className="text-[13px] text-ink-subtle">{t("Este cliente ainda não tem equipamentos cadastrados.")}</p>
                   ) : (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {equipamentos.map((e) => {
@@ -484,7 +489,7 @@ export function DocumentoForm({
                               label={
                                 <span>
                                   <span className="block font-medium">{e.nome}</span>
-                                  <span className="block text-xs text-ink-subtle">{EQUIPAMENTO_CURTO[e.tipo]}</span>
+                                  <span className="block text-xs text-ink-subtle">{t(EQUIPAMENTO_CURTO[e.tipo])}</span>
                                 </span>
                               }
                             />
@@ -495,7 +500,7 @@ export function DocumentoForm({
                   )}
                   <div>
                     <Button variant="outline" size="sm" icon={<Plus />} onClick={() => setEquipModal(true)}>
-                      Novo equipamento
+                      {t("Novo equipamento")}
                     </Button>
                   </div>
                 </>
@@ -504,7 +509,7 @@ export function DocumentoForm({
           ) : null}
 
           <CollapsibleSection
-            title="Serviços"
+            title={t("Serviços")}
             enabled={form.servicos_ativos}
             onEnabledChange={(v) =>
               update((f) => ({
@@ -526,7 +531,7 @@ export function DocumentoForm({
                     : f.servicos,
               }))
             }
-            summary={form.servicos_ativos && form.servicos.length ? money(t.servicos) : "Nenhum serviço"}
+            summary={form.servicos_ativos && form.servicos.length ? money(tot.servicos) : t("Nenhum serviço")}
           >
             <ItemList
               kind="servico"
@@ -538,7 +543,7 @@ export function DocumentoForm({
           </CollapsibleSection>
 
           <CollapsibleSection
-            title="Produtos"
+            title={t("Produtos")}
             enabled={form.produtos_ativos}
             onEnabledChange={(v) =>
               update((f) => ({
@@ -560,7 +565,7 @@ export function DocumentoForm({
                     : f.produtos,
               }))
             }
-            summary={form.produtos_ativos && form.produtos.length ? money(t.produtos) : "Nenhum produto"}
+            summary={form.produtos_ativos && form.produtos.length ? money(tot.produtos) : t("Nenhum produto")}
           >
             <ItemList
               kind="produto"
@@ -572,35 +577,38 @@ export function DocumentoForm({
           </CollapsibleSection>
 
           <CollapsibleSection
-            title="Despesas"
+            title={t("Despesas")}
             enabled={form.despesas_ativas}
             onEnabledChange={(v) => set({ despesas_ativas: v })}
             summary={
               form.despesas_ativas
-                ? [t.frete ? `Frete ${money(t.frete)}` : null, t.interno ? `Internas ${money(t.interno)}` : null]
+                ? [
+                    tot.frete ? t("Frete {valor}", { valor: money(tot.frete) }) : null,
+                    tot.interno ? t("Internas {valor}", { valor: money(tot.interno) }) : null,
+                  ]
                     .filter(Boolean)
-                    .join(" · ") || "Nenhum valor"
-                : "Sem despesas"
+                    .join(" · ") || t("Nenhum valor")
+                : t("Sem despesas")
             }
           >
-            <Field label="Frete" htmlFor="dsp-frete" hint="Cobrado do cliente: entra no total e aparece no PDF">
+            <Field label={t("Frete")} htmlFor="dsp-frete" hint={t("Cobrado do cliente: entra no total e aparece no PDF")}>
               <MoneyInput id="dsp-frete" value={form.despesa_frete} onChange={(v) => set({ despesa_frete: v })} />
             </Field>
             <div className="rounded-lg bg-surface-muted p-3">
               <p className="mb-3 text-xs text-ink-subtle">
-                Custos internos: ficam só no seu controle financeiro. Não entram no total cobrado nem aparecem para o cliente.
+                {t("Custos internos: ficam só no seu controle financeiro. Não entram no total cobrado nem aparecem para o cliente.")}
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Deslocamento" htmlFor="dsp-desl">
+                <Field label={t("Deslocamento")} htmlFor="dsp-desl">
                   <MoneyInput id="dsp-desl" value={form.despesa_deslocamento} onChange={(v) => set({ despesa_deslocamento: v })} />
                 </Field>
-                <Field label="Alimentação" htmlFor="dsp-alim">
+                <Field label={t("Alimentação")} htmlFor="dsp-alim">
                   <MoneyInput id="dsp-alim" value={form.despesa_alimentacao} onChange={(v) => set({ despesa_alimentacao: v })} />
                 </Field>
-                <Field label="Insumos" htmlFor="dsp-ins">
+                <Field label={t("Insumos")} htmlFor="dsp-ins">
                   <MoneyInput id="dsp-ins" value={form.despesa_insumos} onChange={(v) => set({ despesa_insumos: v })} />
                 </Field>
-                <Field label="Outros" htmlFor="dsp-out">
+                <Field label={t("Outros")} htmlFor="dsp-out">
                   <MoneyInput id="dsp-out" value={form.despesa_outros} onChange={(v) => set({ despesa_outros: v })} />
                 </Field>
               </div>
@@ -608,16 +616,16 @@ export function DocumentoForm({
           </CollapsibleSection>
 
           <CollapsibleSection
-            title="Desconto"
+            title={t("Desconto")}
             enabled={descontoAtivo}
             onEnabledChange={(v) => {
               setDescontoAtivo(v);
               if (!v) set({ desconto_valor: 0 });
             }}
-            summary={t.desconto ? `− ${money(t.desconto)}` : "Sem desconto"}
+            summary={tot.desconto ? `− ${money(tot.desconto)}` : t("Sem desconto")}
           >
             <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
-              <div className="inline-flex h-11 rounded-full bg-surface-muted p-1 lg:h-10" role="radiogroup" aria-label="Tipo de desconto">
+              <div className="inline-flex h-11 rounded-full bg-surface-muted p-1 lg:h-10" role="radiogroup" aria-label={t("Tipo de desconto")}>
                 {(["valor", "percentual"] as const).map((tipo) => (
                   <button
                     key={tipo}
@@ -630,21 +638,25 @@ export function DocumentoForm({
                       form.desconto_tipo === tipo ? "bg-surface text-ink shadow-card" : "text-ink-muted",
                     )}
                   >
-                    {tipo === "valor" ? "R$" : "%"}
+                    {tipo === "valor" ? fmt.currencySymbol : "%"}
                   </button>
                 ))}
               </div>
               {form.desconto_tipo === "valor" ? (
-                <Field label="Valor do desconto" htmlFor="desc-valor">
+                <Field label={t("Valor do desconto")} htmlFor="desc-valor">
                   <MoneyInput id="desc-valor" value={form.desconto_valor} onChange={(v) => set({ desconto_valor: v })} />
                 </Field>
               ) : (
-                <Field label="Porcentagem" htmlFor="desc-pct" hint={t.desconto ? `Equivale a ${money(t.desconto)}` : undefined}>
+                <Field
+                  label={t("Porcentagem")}
+                  htmlFor="desc-pct"
+                  hint={tot.desconto ? t("Equivale a {valor}", { valor: money(tot.desconto) }) : undefined}
+                >
                   <Input
                     id="desc-pct"
                     inputMode="decimal"
                     value={form.desconto_valor ? String(form.desconto_valor).replace(".", ",") : ""}
-                    placeholder="Exemplo: 10"
+                    placeholder={t("Exemplo: 10")}
                     onChange={(e) => {
                       const n = Number(e.target.value.replace(",", ".").replace(/[^\d.]/g, ""));
                       set({ desconto_valor: Number.isFinite(n) ? Math.min(100, n) : 0 });
@@ -657,15 +669,15 @@ export function DocumentoForm({
 
           {isOS ? (
             <CollapsibleSection
-              title="Recebimento"
+              title={t("Recebimento")}
               enabled={form.recebido}
               onEnabledChange={(v) =>
-                set({ recebido: v, valor_recebido: v ? (form.valor_recebido ?? t.total) : form.valor_recebido })
+                set({ recebido: v, valor_recebido: v ? (form.valor_recebido ?? tot.total) : form.valor_recebido })
               }
-              summary={form.recebido ? money(form.valor_recebido ?? t.total) : "Não recebido"}
+              summary={form.recebido ? money(form.valor_recebido ?? tot.total) : t("Não recebido")}
             >
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Data do recebimento" htmlFor="rec-data" hint="Data futura: fica Aguardando Pagamento até o dia">
+                <Field label={t("Data do recebimento")} htmlFor="rec-data" hint={t("Data futura: fica Aguardando Pagamento até o dia")}>
                   <Input
                     id="rec-data"
                     type="date"
@@ -674,22 +686,26 @@ export function DocumentoForm({
                   />
                 </Field>
                 <Field
-                  label="Valor recebido"
+                  label={t("Valor recebido")}
                   htmlFor="rec-valor"
                   hint={
-                    form.valor_recebido !== null && form.valor_recebido < t.total
-                      ? `Parcial: faltam ${money(t.total - form.valor_recebido)}`
+                    form.valor_recebido !== null && form.valor_recebido < tot.total
+                      ? t("Parcial: faltam {valor}", { valor: money(tot.total - form.valor_recebido) })
                       : undefined
                   }
                 >
-                  <MoneyInput id="rec-valor" value={form.valor_recebido ?? t.total} onChange={(v) => set({ valor_recebido: v })} />
+                  <MoneyInput id="rec-valor" value={form.valor_recebido ?? tot.total} onChange={(v) => set({ valor_recebido: v })} />
                 </Field>
               </div>
             </CollapsibleSection>
           ) : null}
 
           <Card className="grid gap-4 p-5">
-            <Field label="Garantia" htmlFor="doc-garantia" hint={isOS ? "Conta a partir da data da entrega" : "Vale a partir da entrega do serviço"}>
+            <Field
+              label={t("Garantia")}
+              htmlFor="doc-garantia"
+              hint={isOS ? t("Conta a partir da data da entrega") : t("Vale a partir da entrega do serviço")}
+            >
               <Select
                 id="doc-garantia"
                 className="sm:max-w-60"
@@ -700,12 +716,12 @@ export function DocumentoForm({
                   .sort((a, b) => a - b)
                   .map((m) => (
                     <option key={m} value={m}>
-                      {m === 0 ? "Sem garantia" : m === 1 ? "1 mês" : `${m} meses`}
+                      {m === 0 ? t("Sem garantia") : m === 1 ? t("1 mês") : t("{n} meses", { n: m })}
                     </option>
                   ))}
               </Select>
             </Field>
-            <Field label="Observações" htmlFor="doc-obs" hint="Saem no PDF">
+            <Field label={t("Observações")} htmlFor="doc-obs" hint={t("Saem no PDF")}>
               <Textarea id="doc-obs" value={form.observacoes} onChange={(e) => set({ observacoes: e.target.value })} />
             </Field>
           </Card>
@@ -714,56 +730,57 @@ export function DocumentoForm({
         {/* Resumo de valores */}
         <aside className="grid gap-4 lg:sticky lg:top-6">
           <Card className="grid gap-2.5 p-5">
-            <h2 className="mb-1 text-sm font-semibold">Resumo</h2>
-            <Linha label={`Serviços (${form.servicos_ativos ? form.servicos.length : 0})`} valor={t.servicos} apagado={form.valor_total_manual} />
-            <Linha label={`Produtos (${form.produtos_ativos ? form.produtos.length : 0})`} valor={t.produtos} apagado={form.valor_total_manual} />
-            {t.frete ? <Linha label="Frete" valor={t.frete} apagado={form.valor_total_manual} /> : null}
+            <h2 className="mb-1 text-sm font-semibold">{t("Resumo")}</h2>
+            <Linha label={t("Serviços ({n})", { n: form.servicos_ativos ? form.servicos.length : 0 })} valor={tot.servicos} apagado={form.valor_total_manual} />
+            <Linha label={t("Produtos ({n})", { n: form.produtos_ativos ? form.produtos.length : 0 })} valor={tot.produtos} apagado={form.valor_total_manual} />
+            {tot.frete ? <Linha label={t("Frete")} valor={tot.frete} apagado={form.valor_total_manual} /> : null}
             <div className="flex items-center justify-between gap-2 text-sm text-ink-muted">
-              <Switch checked={form.cobrar_visita} onChange={(v) => set({ cobrar_visita: v })} label="Visita técnica" />
+              <Switch checked={form.cobrar_visita} onChange={(v) => set({ cobrar_visita: v })} label={t("Visita técnica")} />
               <span className={cn("font-medium text-ink tabular-nums", (!form.cobrar_visita || form.valor_total_manual) && "text-ink-subtle")}>
                 {money(form.valor_visita)}
               </span>
             </div>
             {form.cobrar_visita ? (
-              <MoneyInput aria-label="Valor da visita" value={form.valor_visita} onChange={(v) => set({ valor_visita: v })} />
+              <MoneyInput aria-label={t("Valor da visita")} value={form.valor_visita} onChange={(v) => set({ valor_visita: v })} />
             ) : null}
-            {t.desconto ? (
+            {tot.desconto ? (
               <div className="flex justify-between gap-2 text-sm text-ink-muted">
-                Desconto{form.desconto_tipo === "percentual" ? ` (${String(form.desconto_valor).replace(".", ",")}%)` : ""}
+                {t("Desconto")}
+                {form.desconto_tipo === "percentual" ? ` (${fmt.number(form.desconto_valor, 2)}%)` : ""}
                 <strong className={cn("font-medium tabular-nums", form.valor_total_manual ? "text-ink-subtle" : "text-success")}>
-                  − {money(t.desconto)}
+                  − {money(tot.desconto)}
                 </strong>
               </div>
             ) : null}
             <div className="mt-1 flex items-baseline justify-between gap-2 border-t border-border pt-3">
-              <span className="font-semibold">Total</span>
-              <span className="text-[28px] leading-8 font-semibold tracking-[-0.02em] tabular-nums">{money(t.total)}</span>
+              <span className="font-semibold">{t("Total")}</span>
+              <span className="text-[28px] leading-8 font-semibold tracking-[-0.02em] tabular-nums">{money(tot.total)}</span>
             </div>
             <Switch
               checked={form.valor_total_manual}
-              onChange={(v) => set({ valor_total_manual: v, valor_total: v ? t.calculado : form.valor_total })}
-              label={<span className="text-[13px] text-ink-muted">Definir total manualmente</span>}
+              onChange={(v) => set({ valor_total_manual: v, valor_total: v ? tot.calculado : form.valor_total })}
+              label={<span className="text-[13px] text-ink-muted">{t("Definir total manualmente")}</span>}
             />
             {form.valor_total_manual ? (
               <>
-                <MoneyInput aria-label="Total manual" value={form.valor_total} onChange={(v) => set({ valor_total: v })} />
-                <p className="text-xs text-ink-subtle">No PDF sai só o total; os itens aparecem sem valores.</p>
+                <MoneyInput aria-label={t("Total manual")} value={form.valor_total} onChange={(v) => set({ valor_total: v })} />
+                <p className="text-xs text-ink-subtle">{t("No PDF sai só o total; os itens aparecem sem valores.")}</p>
               </>
             ) : null}
-            {t.interno ? (
-              <p className="text-xs text-ink-subtle">Custos internos (não cobrados): {money(t.interno)}</p>
+            {tot.interno ? (
+              <p className="text-xs text-ink-subtle">{t("Custos internos (não cobrados): {valor}", { valor: money(tot.interno) })}</p>
             ) : null}
             {isOS && form.recebido ? (
               <>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-muted">
                   <span
                     className="block h-full rounded-full bg-brand-600"
-                    style={{ width: `${Math.min(100, t.total > 0 ? ((form.valor_recebido ?? t.total) / t.total) * 100 : 100)}%` }}
+                    style={{ width: `${Math.min(100, tot.total > 0 ? ((form.valor_recebido ?? tot.total) / tot.total) * 100 : 100)}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-[13px] text-ink-muted">
-                  Recebido
-                  <strong className="font-medium text-ink tabular-nums">{money(form.valor_recebido ?? t.total)}</strong>
+                  {t("Recebido")}
+                  <strong className="font-medium text-ink tabular-nums">{money(form.valor_recebido ?? tot.total)}</strong>
                 </div>
               </>
             ) : null}
@@ -803,7 +820,7 @@ export function DocumentoForm({
             if (isOS && form.id) {
               const osId = form.id;
               void vincularEquipamento(osId, e.id).then((r) =>
-                setFeedback(r.ok ? { kind: "ok", text: `Equipamento “${e.nome}” adicionado a esta OS.` } : { kind: "error", text: r.error }),
+                setFeedback(r.ok ? { kind: "ok", text: t("Equipamento “{nome}” adicionado a esta OS.", { nome: e.nome }) } : { kind: "error", text: t(r.error) }),
               );
             }
           }}
@@ -814,10 +831,11 @@ export function DocumentoForm({
 }
 
 function Linha({ label, valor, apagado }: { label: string; valor: number; apagado: boolean }) {
+  const { fmt } = useI18n();
   return (
     <div className="flex justify-between gap-2 text-sm text-ink-muted">
       {label}
-      <strong className={cn("font-medium tabular-nums", apagado ? "text-ink-subtle" : "text-ink")}>{money(valor)}</strong>
+      <strong className={cn("font-medium tabular-nums", apagado ? "text-ink-subtle" : "text-ink")}>{fmt.money(valor)}</strong>
     </div>
   );
 }

@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { OrcamentosList, type OrcamentoLinha } from "./orcamentos-list";
+import { pageTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Orçamentos" };
+export const generateMetadata = pageTitle("Orçamentos");
 
 export default async function OrcamentosPage() {
   const supabase = await createClient();

@@ -4,12 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { mainNav, secondaryNav, type NavItem } from "./nav-items";
 
 const itemClass = "flex h-11 items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors lg:h-10";
 
 function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate?: () => void }) {
+  const { t } = useI18n();
   const Icon = item.icon;
   return (
     <Link
@@ -19,13 +21,14 @@ function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean;
       className={cn(itemClass, active ? "bg-action text-on-action" : "text-ink-muted hover:bg-surface-muted hover:text-ink")}
     >
       <Icon className="size-4 shrink-0" strokeWidth={1.75} />
-      {item.label}
+      {t(item.label)}
     </Link>
   );
 }
 
 /** Item com submenu (ex.: Cadastros). Abre sozinho quando você está numa das telas dele. */
 function NavGroup({ item, pathname, onNavigate }: { item: NavItem; pathname: string; onNavigate?: () => void }) {
+  const { t } = useI18n();
   const inside = pathname.startsWith(item.href);
   const [open, setOpen] = useState(inside);
   const Icon = item.icon;
@@ -38,7 +41,7 @@ function NavGroup({ item, pathname, onNavigate }: { item: NavItem; pathname: str
         className={cn(itemClass, "w-full text-left", inside ? "text-ink" : "text-ink-muted hover:bg-surface-muted hover:text-ink")}
       >
         <Icon className="size-4 shrink-0" strokeWidth={1.75} />
-        <span className="flex-1">{item.label}</span>
+        <span className="flex-1">{t(item.label)}</span>
         <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
       </button>
       {open ? (
@@ -56,7 +59,7 @@ function NavGroup({ item, pathname, onNavigate }: { item: NavItem; pathname: str
                   active ? "bg-action text-on-action" : "text-ink-muted hover:bg-surface hover:text-ink",
                 )}
               >
-                {c.label}
+                {t(c.label)}
               </Link>
             );
           })}
@@ -67,6 +70,7 @@ function NavGroup({ item, pathname, onNavigate }: { item: NavItem; pathname: str
 }
 
 export function NavList({ onNavigate }: { onNavigate?: () => void }) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
@@ -78,7 +82,7 @@ export function NavList({ onNavigate }: { onNavigate?: () => void }) {
     );
 
   return (
-    <nav aria-label="Menu principal" className="flex flex-col gap-1">
+    <nav aria-label={t("Menu principal")} className="flex flex-col gap-1">
       {mainNav.map(render)}
       <div className="mx-3 my-2 h-px bg-border" />
       {secondaryNav.map(render)}

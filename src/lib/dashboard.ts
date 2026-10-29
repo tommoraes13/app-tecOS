@@ -50,8 +50,8 @@ export function dataReceb(o: OsDash) {
   return o.data_recebimento ?? o.data_entrega ?? o.data_inicio;
 }
 
-export function metricas(oss: OsDash[], p: Periodo) {
-  const r = intervalo(p);
+export function metricas(oss: OsDash[], p: Periodo, hojeISO = todayISO()) {
+  const r = intervalo(p, hojeISO);
   const hoje = r.fim;
   const concluidas = (a: string, b: string) =>
     oss.filter((o) => (o.status === "finalizado" || o.status === "aguardando_pagamento") && dentro(o.data_entrega, a, b)).length;

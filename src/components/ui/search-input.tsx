@@ -1,13 +1,14 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
 /** Campo de busca em pílula (Design System > Input, variante busca). */
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Buscar",
+  placeholder,
   className,
 }: {
   value: string;
@@ -15,6 +16,7 @@ export function SearchInput({
   placeholder?: string;
   className?: string;
 }) {
+  const { t } = useI18n();
   return (
     <label
       className={cn(
@@ -27,7 +29,7 @@ export function SearchInput({
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("Buscar")}
         className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none"
       />
     </label>

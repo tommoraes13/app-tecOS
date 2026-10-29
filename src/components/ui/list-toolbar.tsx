@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 
 /** Barra que aparece ao selecionar linhas: contagem + excluir selecionados. */
 export function SelectionBar({
@@ -12,14 +13,15 @@ export function SelectionBar({
   onClear: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   if (count === 0) return null;
   return (
     <div className="flex items-center gap-3 border-t border-border bg-surface-muted px-4 py-2.5 text-[13px]">
       <span className="font-medium">
-        {count} {count === 1 ? "selecionado" : "selecionados"}
+        {count === 1 ? t("1 selecionado") : t("{n} selecionados", { n: count })}
       </span>
       <button type="button" onClick={onClear} className="text-ink-muted hover:text-ink">
-        Limpar
+        {t("Limpar")}
       </button>
       <button
         type="button"
@@ -27,7 +29,7 @@ export function SelectionBar({
         className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-full bg-danger-bg px-3 font-medium text-danger"
       >
         <Trash2 className="size-3.5" />
-        Excluir selecionados
+        {t("Excluir selecionados")}
       </button>
     </div>
   );

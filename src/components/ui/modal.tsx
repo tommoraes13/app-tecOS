@@ -3,7 +3,12 @@
 import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+
+function useCloseLabel() {
+  return useI18n().t("Fechar");
+}
 
 function useOverlay(open: boolean, onClose: () => void) {
   useEffect(() => {
@@ -44,11 +49,12 @@ export function Modal({
 }) {
   const titleId = useId();
   useOverlay(open, onClose);
+  const closeLabel = useCloseLabel();
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-center sm:p-6">
-      <button type="button" aria-label="Fechar" onClick={onClose} className="absolute inset-0 bg-overlay" />
+      <button type="button" aria-label={closeLabel} onClick={onClose} className="absolute inset-0 bg-overlay" />
       <div
         role="dialog"
         aria-modal="true"
@@ -70,7 +76,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fechar"
+            aria-label={closeLabel}
             className="inline-grid size-10 shrink-0 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface-muted sm:size-9"
           >
             <X className="size-4" />
@@ -106,11 +112,12 @@ export function Drawer({
 }) {
   const titleId = useId();
   useOverlay(open, onClose);
+  const closeLabel = useCloseLabel();
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex justify-end sm:p-3">
-      <button type="button" aria-label="Fechar" onClick={onClose} className="absolute inset-0 bg-overlay" />
+      <button type="button" aria-label={closeLabel} onClick={onClose} className="absolute inset-0 bg-overlay" />
       <aside
         role="dialog"
         aria-modal="true"
@@ -129,7 +136,7 @@ export function Drawer({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fechar"
+              aria-label={closeLabel}
               className="inline-grid size-10 place-items-center rounded-md border border-border text-ink-muted hover:bg-surface-muted sm:size-9"
             >
               <X className="size-4" />
@@ -151,7 +158,7 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = "Excluir",
+  confirmLabel,
   pending = false,
 }: {
   open: boolean;
@@ -162,6 +169,7 @@ export function ConfirmDialog({
   confirmLabel?: string;
   pending?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <Modal
       open={open}
@@ -175,7 +183,7 @@ export function ConfirmDialog({
             onClick={onClose}
             className="inline-flex h-11 items-center rounded-full px-4 text-sm font-medium text-ink-muted hover:bg-surface-muted lg:h-10"
           >
-            Cancelar
+            {t("Cancelar")}
           </button>
           <button
             type="button"
@@ -183,7 +191,7 @@ export function ConfirmDialog({
             disabled={pending}
             className="inline-flex h-11 items-center rounded-full bg-danger-bg px-4 text-sm font-medium text-danger disabled:opacity-45 lg:h-10"
           >
-            {pending ? "Aguarde…" : confirmLabel}
+            {pending ? t("Aguarde…") : (confirmLabel ?? t("Excluir"))}
           </button>
         </>
       }

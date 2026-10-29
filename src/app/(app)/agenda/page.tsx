@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Plus } from "lucide-react";
 import { VisitaItem } from "@/components/agenda/visita-item";
@@ -7,21 +6,22 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { carregarVisitas } from "@/lib/agenda";
-import { addDaysISO, todayISO } from "@/lib/format";
+import { addDaysISO } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { Calendario } from "./calendario";
+import { getI18n, pageTitle } from "@/i18n/server";
 
-export const metadata: Metadata = { title: "Minha Agenda" };
+export const generateMetadata = pageTitle("Minha Agenda");
 
-function mesValido(m: string | undefined) {
-  return m && /^\d{4}-\d{2}$/.test(m) ? m : todayISO().slice(0, 7);
+function mesValido(m: string | undefined, hoje: string) {
+  return m && /^\d{4}-\d{2}$/.test(m) ? m : hoje.slice(0, 7);
 }
 
 export default async function AgendaPage({ searchParams }: { searchParams: Promise<{ mes?: string; dias?: string }> }) {
-  const params = await searchParams;
-  const mes = mesValido(params.mes);
+  const [params, { t, fmt }] = await Promise.all([searchParams, getI18n()]);
+  const hoje = fmt.today();
+  const mes = mesValido(params.mes, hoje);
   const dias = [7, 15, 30, 90].includes(Number(params.dias)) ? Number(params.dias) : 30;
-  const hoje = todayISO();
 
   // Mês do calendário, com a semana anterior e a seguinte para completar a grade.
   const inicioMes = `${mes}-01`;
@@ -37,11 +37,15 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader
-        title="Minha Agenda"
-        description={`${proximas.length} ${proximas.length === 1 ? "visita" : "visitas"} nos próximos ${dias} dias`}
+        title={t("Minha Agenda")}
+        description={
+          proximas.length === 1
+            ? t("1 visita nos próximos {dias} dias", { dias })
+            : t("{n} visitas nos próximos {dias} dias", { n: proximas.length, dias })
+        }
         actions={
           <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />}>
-            Novo atendimento
+            {t("Novo atendimento")}
           </ButtonLink>
         }
       />
@@ -51,7 +55,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
 
         <Card>
           <CardHeader
-            title="Próximos atendimentos"
+            title={t("Próximos atendimentos")}
             actions={
               <div className="flex gap-1">
                 {[7, 15, 30, 90].map((d) => (
@@ -64,14 +68,14 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
                         : "rounded-full px-2.5 py-1 text-xs font-medium text-ink-muted hover:bg-surface-muted"
                     }
                   >
-                    {d} dias
+                    {t("{n} dias", { n: d })}
                   </Link>
                 ))}
               </div>
             }
           />
           {proximas.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Agenda livre" description="Nenhuma visita técnica marcada neste período." />
+            <EmptyState icon={CalendarDays} title={t("Agenda livre")} description={t("Nenhuma visita técnica marcada neste período.")} />
           ) : (
             <div className="mt-3 divide-y divide-border border-t border-border">
               {proximas.map((v) => (

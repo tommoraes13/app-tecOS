@@ -13,7 +13,8 @@ import { SelectionBar, toggleId } from "@/components/ui/list-toolbar";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
 import { PillTabs } from "@/components/ui/tabs";
-import { date, docNumber, money, normalize, relativeDays } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { docNumber, normalize } from "@/lib/format";
 import { excluirOrcamentos } from "./actions";
 
 export type OrcamentoLinha = {
@@ -30,18 +31,21 @@ export type OrcamentoLinha = {
 type Aba = "aguardando" | "aprovados" | "todos";
 
 function Situacao({ o }: { o: OrcamentoLinha }) {
+  const { t } = useI18n();
   return o.os ? (
     <span className="inline-flex h-6 items-center rounded-full bg-success-bg px-2.5 text-xs font-medium text-success">
-      Virou OS {docNumber(o.os.numero)}
+      {t("Virou OS {n}", { n: docNumber(o.os.numero) })}
     </span>
   ) : (
     <span className="inline-flex h-6 items-center rounded-full bg-warning-bg px-2.5 text-xs font-medium text-warning">
-      Aguardando aceite
+      {t("Aguardando aceite")}
     </span>
   );
 }
 
 export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
+  const { t, fmt } = useI18n();
+  const { date, money, relativeDays } = fmt;
   const router = useRouter();
   const [aba, setAba] = useState<Aba>("aguardando");
   const [q, setQ] = useState("");
@@ -70,7 +74,7 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
   function remove() {
     start(async () => {
       const r = await excluirOrcamentos([...selected]);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       setConfirm(false);
       setSelected(new Set());
       router.refresh();
@@ -80,11 +84,11 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
   return (
     <>
       <PageHeader
-        title="Orçamentos"
-        description={`${aguardando.length} aguardando aceite · ${money(totalAguardando)} em aberto`}
+        title={t("Orçamentos")}
+        description={t("{n} aguardando aceite · {valor} em aberto", { n: aguardando.length, valor: money(totalAguardando) })}
         actions={
           <ButtonLink href="/orcamentos/novo" variant="cta" icon={<Plus />}>
-            Novo orçamento
+            {t("Novo orçamento")}
           </ButtonLink>
         }
       />
@@ -94,41 +98,41 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
             value={aba}
             onChange={setAba}
             items={[
-              { value: "aguardando", label: "Aguardando aceite", count: aguardando.length },
-              { value: "aprovados", label: "Viraram atendimento", count: aprovados.length },
-              { value: "todos", label: "Todos", count: linhas.length },
+              { value: "aguardando", label: t("Aguardando aceite"), count: aguardando.length },
+              { value: "aprovados", label: t("Viraram atendimento"), count: aprovados.length },
+              { value: "todos", label: t("Todos"), count: linhas.length },
             ]}
           />
-          <SearchInput value={q} onChange={setQ} placeholder="Cliente, relato ou nº" className="w-full sm:w-72" />
+          <SearchInput value={q} onChange={setQ} placeholder={t("Cliente, relato ou nº")} className="w-full sm:w-72" />
         </div>
 
         {linhas.length === 0 ? (
           <EmptyState
             icon={FileText}
-            title="Nenhum orçamento ainda"
-            description="Crie um orçamento e, quando o cliente aprovar, transforme em atendimento com um clique."
+            title={t("Nenhum orçamento ainda")}
+            description={t("Crie um orçamento e, quando o cliente aprovar, transforme em atendimento com um clique.")}
             action={
               <ButtonLink href="/orcamentos/novo" variant="dark" icon={<Plus />}>
-                Novo orçamento
+                {t("Novo orçamento")}
               </ButtonLink>
             }
           />
         ) : list.length === 0 ? (
-          <p className="px-4 pb-8 text-center text-sm text-ink-subtle">Nenhum orçamento nesta lista.</p>
+          <p className="px-4 pb-8 text-center text-sm text-ink-subtle">{t("Nenhum orçamento nesta lista.")}</p>
         ) : (
           <ul className="divide-y divide-border border-t border-border">
             {list.map((o) => (
               <li key={o.id} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted">
                 <Checkbox
-                  aria-label={`Selecionar orçamento ${docNumber(o.numero)}`}
+                  aria-label={t("Selecionar orçamento {n}", { n: docNumber(o.numero) })}
                   checked={selected.has(o.id)}
                   onChange={() => setSelected((s) => toggleId(s, o.id))}
                 />
                 <Link href={`/orcamentos/${o.id}`} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1">
                   <span className="w-16 font-mono text-xs text-ink-subtle">{docNumber(o.numero)}</span>
                   <span className="min-w-0 flex-1 basis-40">
-                    <span className="block truncate font-medium">{o.cliente ?? "Cliente não definido"}</span>
-                    <span className="block truncate text-xs text-ink-subtle">{o.relato || "Sem relato"}</span>
+                    <span className="block truncate font-medium">{o.cliente ?? t("Cliente não definido")}</span>
+                    <span className="block truncate text-xs text-ink-subtle">{o.relato || t("Sem relato")}</span>
                   </span>
                   <Situacao o={o} />
                   <span className="w-24 text-right text-xs text-ink-subtle tabular-nums" title={date(o.data)}>
@@ -149,10 +153,10 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
         onClose={() => setConfirm(false)}
         onConfirm={remove}
         pending={pending}
-        title={selected.size === 1 ? "Excluir orçamento?" : `Excluir ${selected.size} orçamentos?`}
+        title={selected.size === 1 ? t("Excluir orçamento?") : t("Excluir {n} orçamentos?", { n: selected.size })}
         description={
           <>
-            Os atendimentos que já foram criados a partir deles continuam salvos. Isso não pode ser desfeito.
+            {t("Os atendimentos que já foram criados a partir deles continuam salvos. Isso não pode ser desfeito.")}
             {error ? <span className="mt-2 block text-danger">{error}</span> : null}
           </>
         }

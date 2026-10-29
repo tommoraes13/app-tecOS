@@ -6,6 +6,7 @@ import { Bell, ChevronDown, CircleHelp, CreditCard, LogOut, Moon, UserRound } fr
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/controls";
 import { Popover } from "@/components/ui/popover";
+import { useI18n } from "@/i18n/client";
 import { initials } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ function ItemLink({ href, icon: Icon, children, onClick }: { href: string; icon:
 
 /** Lado direito da barra superior: ajuda, notificações e menu da conta. */
 export function TopBarActions({ user, compact = false }: { user: TopBarUser; compact?: boolean }) {
+  const { t } = useI18n();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -59,47 +61,47 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
   return (
     <div className="flex items-center gap-2">
       <Popover
-        label="Ajuda"
+        label={t("Ajuda")}
         trigger={({ toggle }) => (
-          <button type="button" onClick={toggle} aria-label="Ajuda" className={cn(iconBtn, compact && "size-9")}>
+          <button type="button" onClick={toggle} aria-label={t("Ajuda")} className={cn(iconBtn, compact && "size-9")}>
             <CircleHelp className="size-4" />
           </button>
         )}
       >
         {() => (
           <div className="p-3">
-            <p className="text-sm font-semibold">Central de ajuda</p>
+            <p className="text-sm font-semibold">{t("Central de ajuda")}</p>
             <p className="mt-1 text-[13px] text-ink-subtle">
-              Em breve: perguntas frequentes e tutoriais sobre cada tela do app.
+              {t("Em breve: perguntas frequentes e tutoriais sobre cada tela do app.")}
             </p>
           </div>
         )}
       </Popover>
 
       <Popover
-        label="Notificações"
+        label={t("Notificações")}
         trigger={({ toggle }) => (
-          <button type="button" onClick={toggle} aria-label="Notificações" className={cn(iconBtn, compact && "size-9")}>
+          <button type="button" onClick={toggle} aria-label={t("Notificações")} className={cn(iconBtn, compact && "size-9")}>
             <Bell className="size-4" />
           </button>
         )}
       >
         {() => (
           <div className="p-3">
-            <p className="text-sm font-semibold">Notificações</p>
-            <p className="mt-1 text-[13px] text-ink-subtle">Nenhuma notificação por enquanto.</p>
+            <p className="text-sm font-semibold">{t("Notificações")}</p>
+            <p className="mt-1 text-[13px] text-ink-subtle">{t("Nenhuma notificação por enquanto.")}</p>
           </div>
         )}
       </Popover>
 
       <Popover
-        label="Conta"
+        label={t("Conta")}
         trigger={({ toggle, open }) => (
           <button
             type="button"
             onClick={toggle}
             aria-expanded={open}
-            aria-label="Menu da conta"
+            aria-label={t("Menu da conta")}
             className={cn(
               "flex items-center gap-2.5 rounded-full text-left",
               compact ? "p-0" : "border border-border bg-surface py-1 pr-3 pl-1 hover:bg-surface-muted",
@@ -109,7 +111,7 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
             {compact ? null : (
               <>
                 <span className="hidden min-w-0 sm:block">
-                  <span className="block max-w-40 truncate text-sm font-semibold">{user.nome || "Minha conta"}</span>
+                  <span className="block max-w-40 truncate text-sm font-semibold">{user.nome || t("Minha conta")}</span>
                   <span className="block max-w-40 truncate text-xs text-ink-subtle">{user.email}</span>
                 </span>
                 <ChevronDown className="size-4 text-ink-subtle" />
@@ -123,21 +125,21 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
             <div className="flex items-center gap-3 border-b border-border px-3 pt-2 pb-3">
               <Avatar user={user} size={40} />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{user.nome || "Minha conta"}</p>
+                <p className="truncate text-sm font-semibold">{user.nome || t("Minha conta")}</p>
                 <p className="truncate text-xs text-ink-subtle">{user.email}</p>
               </div>
             </div>
             <div className="py-1">
               <ItemLink href="/minha-conta" icon={UserRound} onClick={close}>
-                Minha Conta
+                {t("Minha Conta")}
               </ItemLink>
               <ItemLink href="/meu-plano" icon={CreditCard} onClick={close}>
-                Meu Plano
+                {t("Meu Plano")}
               </ItemLink>
               <div className="flex h-11 items-center justify-between gap-2 rounded-lg px-3 text-sm font-medium lg:h-10">
                 <span className="flex items-center gap-2.5">
                   <Moon className="size-4 text-ink-subtle" />
-                  Modo escuro
+                  {t("Modo escuro")}
                 </span>
                 <Switch checked={dark} onChange={(v) => setTheme(v ? "dark" : "light")} />
               </div>
@@ -149,7 +151,7 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
                 className="flex h-11 w-full items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-danger hover:bg-danger-bg lg:h-10"
               >
                 <LogOut className="size-4" />
-                Sair do aplicativo
+                {t("Sair do aplicativo")}
               </button>
             </form>
           </>

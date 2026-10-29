@@ -1,7 +1,8 @@
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse, type NextRequest } from "next/server";
-import { date, docNumber, todayISO } from "@/lib/format";
+import { getI18n } from "@/i18n/server";
+import { docNumber } from "@/lib/format";
 import { carregarPdf } from "@/lib/pdf/dados";
 import { DocumentoPDF } from "@/lib/pdf/documento-pdf";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
@@ -18,19 +19,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const user = await getCurrentUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
 
-  const dados = await carregarPdf(supabase, tipo, id);
-  if (!dados) return new NextResponse("Documento não encontrado", { status: 404 });
+  const { t, fmt } = await getI18n();
+  const dados = await carregarPdf(supabase, tipo, id, t);
+  if (!dados) return new NextResponse(t("Documento não encontrado."), { status: 404 });
 
-  const hora = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }).format(new Date());
-  const element = createElement(DocumentoPDF, { d: dados, geradoEm: `${date(todayISO())} às ${hora}` });
+  const geradoEm = t("{data} às {hora}", { data: fmt.date(fmt.today()), hora: fmt.time(new Date()) });
+  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt });
   const buffer = await renderToBuffer(element as unknown as Parameters<typeof renderToBuffer>[0]);
 
-  const nome = `${tipo === "os" ? "OS" : "Orcamento"}-${docNumber(dados.numero)}.pdf`;
+  const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(dados.numero)}.pdf`;
   const baixar = request.nextUrl.searchParams.has("baixar");
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `${baixar ? "attachment" : "inline"}; filename="${nome}"`,
+      "Content-Disposition": `${baixar ? "attachment" : "inline"}; filename="${encodeURIComponent(nome)}"`,
       "Cache-Control": "private, no-store",
     },
   });

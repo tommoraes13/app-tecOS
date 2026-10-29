@@ -159,8 +159,8 @@ export function secretKeys(j: Json): string[] {
     .map(([k]) => k);
 }
 
-/** Resumo de uma linha: "Dell Inspiron · Windows 11". */
-export function resumoEquipamento(tipo: TipoEquipamento, specs: Specs) {
+/** Resumo de uma linha: "Dell Inspiron · Windows 11". `t` traduz as opções fixas (ex.: tipo de rede). */
+export function resumoEquipamento(tipo: TipoEquipamento, specs: Specs, t: (s: string) => string = (s) => s) {
   const s = (k: string) => (typeof specs[k] === "string" ? (specs[k] as string) : "");
   const parts =
     tipo === "desktop"
@@ -168,7 +168,7 @@ export function resumoEquipamento(tipo: TipoEquipamento, specs: Specs) {
       : tipo === "notebook"
         ? [s("modelo"), s("so")]
         : tipo === "rede"
-          ? [s("subtipo"), s("provedor"), s("ssid_24")]
+          ? [s("subtipo") && t(s("subtipo")), s("provedor") && t(s("provedor")), s("ssid_24")]
           : [s("marca"), s("modelo")];
   return parts.filter(Boolean).join(" · ");
 }

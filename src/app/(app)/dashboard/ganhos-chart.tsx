@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { dateShort, money } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
 
 type Barra = { inicio: string; fim: string; valor: number };
 
 /** Ganhos no período: uma série de barras (valor recebido), com dica ao passar o dedo ou o mouse. */
 export function GanhosChart({ barras, porSemana }: { barras: Barra[]; porSemana: boolean }) {
+  const { t, fmt } = useI18n();
+  const { dateShort, money } = fmt;
   const [hover, setHover] = useState<number | null>(null);
   const W = 640;
   const H = 220;
@@ -23,17 +25,17 @@ export function GanhosChart({ barras, porSemana }: { barras: Barra[]; porSemana:
   const y = (v: number) => padT + plotH - (v / topo) * plotH;
   const labelEvery = Math.ceil(barras.length / 8);
 
-  const rotulo = (b: Barra) => (porSemana ? `${dateShort(b.inicio)} a ${dateShort(b.fim)}` : dateShort(b.inicio));
+  const rotulo = (b: Barra) => (porSemana ? t("{inicio} a {fim}", { inicio: dateShort(b.inicio), fim: dateShort(b.fim) }) : dateShort(b.inicio));
   const ativa = hover !== null ? barras[hover] : null;
 
   return (
     <div className="relative px-2 pb-4">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Valor recebido no período">
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={padL} x2={W - 8} y1={y(t)} y2={y(t)} stroke="var(--border)" strokeWidth="1" />
-            <text x={padL - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--ink-subtle)">
-              {money(t, { noCents: true })}
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={t("Valor recebido no período")}>
+        {ticks.map((tk) => (
+          <g key={tk}>
+            <line x1={padL} x2={W - 8} y1={y(tk)} y2={y(tk)} stroke="var(--border)" strokeWidth="1" />
+            <text x={padL - 8} y={y(tk) + 4} textAnchor="end" fontSize="11" fill="var(--ink-subtle)">
+              {money(tk, { noCents: true })}
             </text>
           </g>
         ))}
@@ -78,7 +80,7 @@ export function GanhosChart({ barras, porSemana }: { barras: Barra[]; porSemana:
         </div>
       ) : null}
       <table className="sr-only">
-        <caption>Valor recebido por {porSemana ? "semana" : "dia"}</caption>
+        <caption>{t(porSemana ? "Valor recebido por semana" : "Valor recebido por dia")}</caption>
         <tbody>
           {barras.map((b) => (
             <tr key={b.inicio}>

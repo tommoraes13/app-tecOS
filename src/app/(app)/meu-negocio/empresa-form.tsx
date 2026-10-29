@@ -7,10 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Feedback, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import type { Tables } from "@/lib/database.types";
+import { useI18n } from "@/i18n/client";
 import { cep, phone } from "@/lib/format";
 import { salvarEmpresa, type EmpresaInput } from "./actions";
 
 export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
+  const { t } = useI18n();
   const [form, setForm] = useState<EmpresaInput>({
     nome_fantasia: negocio.nome_fantasia ?? "",
     razao_social: negocio.razao_social ?? "",
@@ -39,7 +41,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
     e.preventDefault();
     start(async () => {
       const r = await salvarEmpresa(form);
-      setResult(r.ok ? { kind: "ok", text: "Dados da empresa salvos." } : { kind: "error", text: r.error });
+      setResult(r.ok ? { kind: "ok", text: t("Dados da empresa salvos.") } : { kind: "error", text: t(r.error) });
     });
   }
 
@@ -57,15 +59,15 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
     <form onSubmit={onSubmit}>
       <Card className="grid gap-6 p-5 sm:p-6">
         <section className="grid gap-3">
-          <h2 className="text-[15px] font-semibold">Identificação</h2>
+          <h2 className="text-[15px] font-semibold">{t("Identificação")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Nome fantasia" htmlFor="nf" hint="Aparece no topo dos PDFs">
+            <Field label={t("Nome fantasia")} htmlFor="nf" hint={t("Aparece no topo dos PDFs")}>
               <Input id="nf" value={form.nome_fantasia} onChange={(e) => set({ nome_fantasia: e.target.value })} />
             </Field>
-            <Field label="Razão social" htmlFor="rs">
+            <Field label={t("Razão social")} htmlFor="rs">
               <Input id="rs" value={form.razao_social} onChange={(e) => set({ razao_social: e.target.value })} />
             </Field>
-            <Field label="CPF ou CNPJ" htmlFor="doc" hint="Opcional">
+            <Field label={t("CPF ou CNPJ")} htmlFor="doc" hint={t("Opcional")}>
               <Input
                 id="doc"
                 inputMode="numeric"
@@ -74,7 +76,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
                 onChange={(e) => set({ cpf_cnpj: e.target.value.replace(/[^\d./-]/g, "") })}
               />
             </Field>
-            <Field label="Região de atendimento" htmlFor="km" hint="Raio em km a partir do seu endereço">
+            <Field label={t("Região de atendimento")} htmlFor="km" hint={t("Raio em km a partir do seu endereço")}>
               <Input
                 id="km"
                 inputMode="decimal"
@@ -89,9 +91,9 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
         </section>
 
         <section className="grid gap-3">
-          <h2 className="text-[15px] font-semibold">Garantia</h2>
+          <h2 className="text-[15px] font-semibold">{t("Garantia")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Garantia padrão" htmlFor="gar" hint="Vem preenchida em cada nova OS e orçamento">
+            <Field label={t("Garantia padrão")} htmlFor="gar" hint={t("Vem preenchida em cada nova OS e orçamento")}>
               <Select
                 id="gar"
                 value={form.garantia_meses_padrao}
@@ -101,7 +103,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
                   .sort((a, b) => a - b)
                   .map((m) => (
                     <option key={m} value={m}>
-                      {m === 0 ? "Sem garantia" : m === 1 ? "1 mês" : `${m} meses`}
+                      {m === 0 ? t("Sem garantia") : m === 1 ? t("1 mês") : t("{n} meses", { n: m })}
                     </option>
                   ))}
               </Select>
@@ -110,12 +112,12 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
         </section>
 
         <section className="grid gap-3">
-          <h2 className="text-[15px] font-semibold">Contato</h2>
+          <h2 className="text-[15px] font-semibold">{t("Contato")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="E-mail" htmlFor="em">
+            <Field label={t("E-mail")} htmlFor="em">
               <Input id="em" type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} />
             </Field>
-            <Field label="Telefone" htmlFor="tel">
+            <Field label={t("Telefone")} htmlFor="tel">
               <Input
                 id="tel"
                 type="tel"
@@ -129,7 +131,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
         </section>
 
         <section className="grid gap-3">
-          <h2 className="text-[15px] font-semibold">Endereço</h2>
+          <h2 className="text-[15px] font-semibold">{t("Endereço")}</h2>
           <AddressFields idPrefix="empresa" value={address} onChange={(patch) => set(patch)} />
         </section>
 
@@ -137,7 +139,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
 
         <div className="flex justify-end">
           <Button type="submit" variant="dark" disabled={pending} className="w-full sm:w-auto">
-            {pending ? "Salvando…" : "Salvar dados"}
+            {pending ? t("Salvando…") : t("Salvar dados")}
           </Button>
         </div>
       </Card>

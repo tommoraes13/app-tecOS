@@ -1,17 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { getI18n } from "@/i18n/server";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
 
-export const metadata: Metadata = {
-  title: { default: "TecDesk", template: "%s · TecDesk" },
-  description: "Gestão de atendimentos para técnicos de informática.",
-  applicationName: "TecDesk",
-  appleWebApp: { capable: true, title: "TecDesk", statusBarStyle: "default" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return {
+    title: { default: "TecDesk", template: "%s · TecDesk" },
+    description: t("Gestão de atendimentos para técnicos de informática."),
+    applicationName: "TecDesk",
+    appleWebApp: { capable: true, title: "TecDesk", statusBarStyle: "default" },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -22,11 +26,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { prefs, dict } = await getI18n();
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${jetbrains.variable}`}>
+    <html lang={prefs.locale} suppressHydrationWarning className={`${inter.variable} ${jetbrains.variable}`}>
       <body>
-        <Providers>{children}</Providers>
+        <Providers prefs={prefs} dict={dict}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

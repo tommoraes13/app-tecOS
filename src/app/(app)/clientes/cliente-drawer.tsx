@@ -9,7 +9,8 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/modal";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { Tables } from "@/lib/database.types";
-import { cep, date, docNumber, money, phone, whatsappLink } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { cep, docNumber, phone, whatsappLink } from "@/lib/format";
 import { CANAL_LABEL } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/client";
 import { toCliente, type ClienteResumo } from "./clientes-list";
@@ -29,6 +30,8 @@ export function ClienteDrawer({
   onEdit: (c: Tables<"base_clientes">) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t, fmt } = useI18n();
+  const { date, money } = fmt;
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [historico, setHistorico] = useState<Record<string, HistoricoItem[]>>({});
   const [atendimentos, setAtendimentos] = useState<OsResumo[]>([]);
@@ -119,18 +122,18 @@ export function ClienteDrawer({
         open
         onClose={onClose}
         title={cliente.nome ?? ""}
-        overline={`${cliente.servicos_prestados ?? 0} ${cliente.servicos_prestados === 1 ? "serviço prestado" : "serviços prestados"}`}
+        overline={cliente.servicos_prestados === 1 ? t("1 serviço prestado") : t("{n} serviços prestados", { n: cliente.servicos_prestados ?? 0 })}
         footer={
           <>
             <Button variant="danger" size="sm" onClick={() => onDelete(id)}>
-              Excluir
+              {t("Excluir")}
             </Button>
             <span className="flex-1" />
             <Button variant="ghost" size="sm" onClick={() => onEdit(toCliente(cliente))}>
-              Editar
+              {t("Editar")}
             </Button>
             <ButtonLink href={`/servicos/novo?cliente=${id}`} variant="dark" size="sm">
-              Novo atendimento
+              {t("Novo atendimento")}
             </ButtonLink>
           </>
         }
@@ -143,7 +146,7 @@ export function ClienteDrawer({
           {wa ? (
             <a href={wa} target="_blank" rel="noreferrer" className="flex items-center gap-2 font-medium text-brand-ink">
               <MessageCircle className="size-4" />
-              Conversar no WhatsApp
+              {t("Conversar no WhatsApp")}
             </a>
           ) : null}
           {cliente.email ? (
@@ -158,27 +161,27 @@ export function ClienteDrawer({
               <span>{endereco}</span>
             </p>
           ) : null}
-          {cliente.canal ? <p className="text-xs text-ink-subtle">Canal: {CANAL_LABEL[cliente.canal]}</p> : null}
+          {cliente.canal ? <p className="text-xs text-ink-subtle">{t("Canal: {canal}", { canal: t(CANAL_LABEL[cliente.canal]) })}</p> : null}
         </div>
 
         {cliente.observacoes ? (
           <section>
-            <h3 className="mb-1 text-sm font-semibold">Observações</h3>
+            <h3 className="mb-1 text-sm font-semibold">{t("Observações")}</h3>
             <p className="text-sm whitespace-pre-wrap text-ink-muted">{cliente.observacoes}</p>
           </section>
         ) : null}
 
         <section className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Equipamentos</h3>
+            <h3 className="text-sm font-semibold">{t("Equipamentos")}</h3>
             <Button variant="outline" size="sm" icon={<Plus />} onClick={() => setEquipModal({ equipamento: null })}>
-              Adicionar
+              {t("Adicionar")}
             </Button>
           </div>
           {loading && equipamentos.length === 0 ? (
-            <p className="text-[13px] text-ink-subtle">Carregando…</p>
+            <p className="text-[13px] text-ink-subtle">{t("Carregando…")}</p>
           ) : equipamentos.length === 0 ? (
-            <p className="text-[13px] text-ink-subtle">Nenhum equipamento cadastrado.</p>
+            <p className="text-[13px] text-ink-subtle">{t("Nenhum equipamento cadastrado.")}</p>
           ) : (
             equipamentos.map((e) => (
               <EquipamentoCard
@@ -193,16 +196,16 @@ export function ClienteDrawer({
 
         <section className="space-y-2">
           <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-            <Wrench className="size-4 text-ink-subtle" /> Atendimentos
+            <Wrench className="size-4 text-ink-subtle" /> {t("Atendimentos")}
           </h3>
           {atendimentos.length === 0 ? (
-            <p className="text-[13px] text-ink-subtle">Nenhum atendimento ainda.</p>
+            <p className="text-[13px] text-ink-subtle">{t("Nenhum atendimento ainda.")}</p>
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border">
               {atendimentos.map((o) => (
                 <li key={o.id}>
                   <Link href={`/servicos/${o.id}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-surface-muted">
-                    <span className="font-mono text-xs text-ink-subtle">OS {docNumber(o.numero)}</span>
+                    <span className="font-mono text-xs text-ink-subtle">{t("OS {n}", { n: docNumber(o.numero) })}</span>
                     <span className="min-w-0 flex-1">
                       <StatusBadge status={o.status} />
                     </span>
@@ -219,16 +222,16 @@ export function ClienteDrawer({
 
         <section className="space-y-2">
           <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-            <FileText className="size-4 text-ink-subtle" /> Orçamentos
+            <FileText className="size-4 text-ink-subtle" /> {t("Orçamentos")}
           </h3>
           {orcamentos.length === 0 ? (
-            <p className="text-[13px] text-ink-subtle">Nenhum orçamento ainda.</p>
+            <p className="text-[13px] text-ink-subtle">{t("Nenhum orçamento ainda.")}</p>
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border">
               {orcamentos.map((o) => (
                 <li key={o.id}>
                   <Link href={`/orcamentos/${o.id}`} className="flex items-center gap-3 px-3 py-2.5 hover:bg-surface-muted">
-                    <span className="flex-1 font-mono text-xs text-ink-subtle">ORC {docNumber(o.numero)}</span>
+                    <span className="flex-1 font-mono text-xs text-ink-subtle">{t("ORC {n}", { n: docNumber(o.numero) })}</span>
                     <span className="text-xs text-ink-subtle tabular-nums">{date(o.data)}</span>
                     <span className="text-xs font-medium tabular-nums">{money(o.valor_total)}</span>
                   </Link>

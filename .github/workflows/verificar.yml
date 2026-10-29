@@ -40,8 +40,10 @@ jobs:
             npm pkg set type=module
             npx --yes tsx@4 --tsconfig scripts/tsconfig.teste.json scripts/teste-pdf.tsx teste-os.pdf 2>&1 | tee pdf.log || status=1
           fi
+          # Traduções: todo texto da tela precisa existir em inglês e espanhol.
+          npx --yes tsx@4 --tsconfig scripts/tsconfig.teste.json scripts/verificar-traducoes.ts 2>&1 | tee traducoes.log || status=1
           if [ $status -ne 0 ]; then
-            for f in tipos.log build.log pdf.log; do
+            for f in tipos.log build.log pdf.log traducoes.log; do
               [ -s "$f" ] || continue
               msg=$(grep -vE '^\s*$' "$f" | tail -80 | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
               echo "::error title=$f::$msg"
@@ -52,12 +54,12 @@ jobs:
         if: success()
         run: |
           # Publica o PDF de exemplo numa branch separada, para conferência visual.
-          mkdir -p /tmp/art && cp teste-os.pdf /tmp/art/
+          mkdir -p /tmp/art && cp teste-os.pdf teste-os-en.pdf /tmp/art/
           cd /tmp/art
           git init -q -b ci-artefatos
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
-          git add teste-os.pdf
+          git add teste-os.pdf teste-os-en.pdf
           git commit -q -m "PDF de exemplo (${GITHUB_SHA::7})"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-artefatos
 

@@ -34,7 +34,13 @@ export type PdfDados = {
 type Client = SupabaseClient<Database>;
 
 /** Junta tudo o que o PDF precisa. A leitura passa pelas regras do banco: só o dono acessa. */
-export async function carregarPdf(supabase: Client, tipo: "os" | "orcamento", id: string): Promise<PdfDados | null> {
+/** `t` traduz os nomes fixos (tipo de equipamento, opções) para o idioma do técnico. */
+export async function carregarPdf(
+  supabase: Client,
+  tipo: "os" | "orcamento",
+  id: string,
+  t: (s: string) => string = (s) => s,
+): Promise<PdfDados | null> {
   const { data: negocio } = await supabase.from("meu_negocio").select("*").maybeSingle();
 
   const header =
@@ -102,7 +108,7 @@ export async function carregarPdf(supabase: Client, tipo: "os" | "orcamento", id
     observacoes: header.observacoes,
     equipamentos: (equips ?? []).map((e) => ({
       nome: e.nome,
-      detalhe: [EQUIPAMENTO_CURTO[e.tipo], resumoEquipamento(e.tipo, asSpecs(e.especificacoes))].filter(Boolean).join(" · "),
+      detalhe: [t(EQUIPAMENTO_CURTO[e.tipo]), resumoEquipamento(e.tipo, asSpecs(e.especificacoes), t)].filter(Boolean).join(" · "),
     })),
     visitas: (vis.data ?? []).map((v) => ({ data: v.data, hora: v.hora ? v.hora.slice(0, 5) : null, duracao_min: v.duracao_min })),
     servicos,

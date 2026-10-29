@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Loader2, MapPin } from "lucide-react";
 import { Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
+import { useI18n } from "@/i18n/client";
 import { buscarCep } from "@/lib/cep";
 import { cep as formatCep } from "@/lib/format";
 import { UFS } from "@/lib/labels";
@@ -28,6 +29,7 @@ export function AddressFields({
   onChange: (patch: Partial<Address>) => void;
   idPrefix: string;
 }) {
+  const { t } = useI18n();
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
   async function onCep(raw: string) {
@@ -58,7 +60,7 @@ export function AddressFields({
   return (
     <div className="grid gap-3 sm:grid-cols-6">
       <div className="sm:col-span-2">
-        <Field label="CEP" htmlFor={id("cep")}>
+        <Field label={t("CEP")} htmlFor={id("cep")}>
           <div className="relative">
             <MapPin className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-subtle" />
             <Input
@@ -74,18 +76,18 @@ export function AddressFields({
         </Field>
         {status === "loading" ? (
           <p className="mt-1 flex items-center gap-1 text-xs text-ink-subtle">
-            <Loader2 className="size-3 animate-spin" /> Buscando endereço…
+            <Loader2 className="size-3 animate-spin" /> {t("Buscando endereço…")}
           </p>
         ) : status === "ok" ? (
           <p className="mt-1 flex items-center gap-1 text-xs text-success">
-            <Check className="size-3" /> Endereço preenchido automaticamente
+            <Check className="size-3" /> {t("Endereço preenchido automaticamente")}
           </p>
         ) : status === "error" ? (
-          <p className="mt-1 text-xs text-danger">CEP não encontrado. Preencha o endereço manualmente.</p>
+          <p className="mt-1 text-xs text-danger">{t("CEP não encontrado. Preencha o endereço manualmente.")}</p>
         ) : null}
       </div>
       <div className="sm:col-span-4">
-        <Field label="Endereço" htmlFor={id("endereco")}>
+        <Field label={t("Endereço")} htmlFor={id("endereco")}>
           <Input
             id={id("endereco")}
             autoComplete="address-line1"
@@ -95,34 +97,34 @@ export function AddressFields({
         </Field>
       </div>
       <div className="sm:col-span-2">
-        <Field label="Número" htmlFor={id("numero")}>
+        <Field label={t("Número@@endereço")} htmlFor={id("numero")}>
           <Input id={id("numero")} value={value.numero} onChange={(e) => onChange({ numero: e.target.value })} />
         </Field>
       </div>
       <div className="sm:col-span-4">
-        <Field label="Complemento" htmlFor={id("complemento")}>
+        <Field label={t("Complemento")} htmlFor={id("complemento")}>
           <Input
             id={id("complemento")}
-            placeholder="Apto, bloco, sala"
+            placeholder={t("Apto, bloco, sala")}
             value={value.complemento}
             onChange={(e) => onChange({ complemento: e.target.value })}
           />
         </Field>
       </div>
       <div className="sm:col-span-2">
-        <Field label="Bairro" htmlFor={id("bairro")}>
+        <Field label={t("Bairro")} htmlFor={id("bairro")}>
           <Input id={id("bairro")} value={value.bairro} onChange={(e) => onChange({ bairro: e.target.value })} />
         </Field>
       </div>
       <div className="sm:col-span-3">
-        <Field label="Cidade" htmlFor={id("cidade")}>
+        <Field label={t("Cidade")} htmlFor={id("cidade")}>
           <Input id={id("cidade")} value={value.cidade} onChange={(e) => onChange({ cidade: e.target.value })} />
         </Field>
       </div>
       <div className="sm:col-span-1">
-        <Field label="Estado" htmlFor={id("estado")}>
+        <Field label={t("Estado@@UF")} htmlFor={id("estado")}>
           <Select id={id("estado")} value={value.estado} onChange={(e) => onChange({ estado: e.target.value })}>
-            <option value="">UF</option>
+            <option value="">{t("UF")}</option>
             {UFS.map((uf) => (
               <option key={uf} value={uf}>
                 {uf}

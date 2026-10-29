@@ -14,7 +14,8 @@ import { SelectionBar, toggleId } from "@/components/ui/list-toolbar";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
 import type { Enums, Tables } from "@/lib/database.types";
-import { date, money, normalize, phone } from "@/lib/format";
+import { useI18n } from "@/i18n/client";
+import { normalize, phone } from "@/lib/format";
 import { CANAL_LABEL } from "@/lib/labels";
 import { excluirClientes } from "./actions";
 import { ClienteDrawer } from "./cliente-drawer";
@@ -53,15 +54,16 @@ export type ResumoClientes = {
 };
 
 function Resumo({ r }: { r: ResumoClientes }) {
+  const { t, fmt } = useI18n();
   const taxa = r.orcamentos ? Math.round((r.aceitos / r.orcamentos) * 100) : null;
   const itens = [
-    { label: "Nº de clientes", valor: String(r.clientes), sub: null },
-    { label: "Valor médio dos serviços", valor: money(r.valorMedio), sub: null },
-    { label: "Clientes em garantia", valor: String(r.emGarantia), sub: null },
+    { label: t("Nº de clientes"), valor: String(r.clientes), sub: null },
+    { label: t("Valor médio dos serviços"), valor: fmt.money(r.valorMedio), sub: null },
+    { label: t("Clientes em garantia"), valor: String(r.emGarantia), sub: null },
     {
-      label: "Tx. de orçamentos aceitos",
+      label: t("Tx. de orçamentos aceitos"),
       valor: taxa === null ? "—" : `${taxa}%`,
-      sub: r.orcamentos ? `${r.aceitos} de ${r.orcamentos} orçamentos` : "Nenhum orçamento ainda",
+      sub: r.orcamentos ? t("{a} de {n} orçamentos", { a: r.aceitos, n: r.orcamentos }) : t("Nenhum orçamento ainda"),
     },
   ];
   return (
@@ -88,6 +90,7 @@ export function ClientesList({
   resumo: ResumoClientes;
   emGarantia: string[];
 }) {
+  const { t, fmt } = useI18n();
   const router = useRouter();
   const [q, setQ] = useState("");
   const [canal, setCanal] = useState<Enums<"cliente_canal"> | "">("");
@@ -124,7 +127,7 @@ export function ClientesList({
   function remove(ids: string[]) {
     start(async () => {
       const r = await excluirClientes(ids);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       setConfirm(null);
       setSelected(new Set());
       if (openId && ids.includes(openId)) setOpenId(null);
@@ -139,8 +142,8 @@ export function ClientesList({
   return (
     <>
       <PageHeader
-        title="Clientes"
-        description="Seus clientes, os equipamentos de cada um e o histórico de atendimentos."
+        title={t("Clientes")}
+        description={t("Seus clientes, os equipamentos de cada um e o histórico de atendimentos.")}
       />
 
       <Resumo r={resumo} />
@@ -151,7 +154,7 @@ export function ClientesList({
             <SearchInput
               value={q}
               onChange={setQ}
-              placeholder="Nome, telefone, e-mail ou cidade"
+              placeholder={t("Nome, telefone, e-mail ou cidade")}
               className="w-full sm:w-80"
             />
             <div className="ml-auto flex w-full gap-2 sm:w-auto">
@@ -162,35 +165,35 @@ export function ClientesList({
                 className="flex-1 sm:flex-none"
                 aria-expanded={filtrosAbertos}
               >
-                Filtros{canal || situacao ? " (ativos)" : ""}
+                {canal || situacao ? t("Filtros (ativos)") : t("Filtros")}
               </Button>
               <Button variant="cta" icon={<Plus />} onClick={() => setModal({ cliente: null })} className="flex-1 sm:flex-none">
-                Novo cliente
+                {t("Novo cliente")}
               </Button>
             </div>
           </div>
           {filtrosAbertos ? (
             <div className="grid gap-3 rounded-lg bg-surface-muted p-3 sm:grid-cols-[repeat(2,minmax(0,240px))_auto] sm:items-end">
-              <Field label="Canal" htmlFor="f-canal">
+              <Field label={t("Canal")} htmlFor="f-canal">
                 <Select
                   id="f-canal"
                   value={canal}
                   onChange={(e) => setCanal(e.target.value as Enums<"cliente_canal"> | "")}
                 >
-                  <option value="">Todos os canais</option>
+                  <option value="">{t("Todos os canais")}</option>
                   {Object.entries(CANAL_LABEL).map(([v, l]) => (
                     <option key={v} value={v}>
-                      {l}
+                      {t(l)}
                     </option>
                   ))}
                 </Select>
               </Field>
-              <Field label="Situação" htmlFor="f-sit">
+              <Field label={t("Situação")} htmlFor="f-sit">
                 <Select id="f-sit" value={situacao} onChange={(e) => setSituacao(e.target.value as typeof situacao)}>
-                  <option value="">Todos</option>
-                  <option value="garantia">Em garantia</option>
-                  <option value="com">Com atendimentos</option>
-                  <option value="sem">Sem atendimentos</option>
+                  <option value="">{t("Todos")}</option>
+                  <option value="garantia">{t("Em garantia")}</option>
+                  <option value="com">{t("Com atendimentos")}</option>
+                  <option value="sem">{t("Sem atendimentos")}</option>
                 </Select>
               </Field>
               {canal || situacao ? (
@@ -201,7 +204,7 @@ export function ClientesList({
                     setSituacao("");
                   }}
                 >
-                  Limpar filtros
+                  {t("Limpar filtros")}
                 </Button>
               ) : null}
             </div>
@@ -211,11 +214,11 @@ export function ClientesList({
         {clientes.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="Nenhum cliente cadastrado"
-            description="Cadastre aqui ou direto na criação de um atendimento."
+            title={t("Nenhum cliente cadastrado")}
+            description={t("Cadastre aqui ou direto na criação de um atendimento.")}
           />
         ) : list.length === 0 ? (
-          <p className="px-4 pb-8 text-center text-sm text-ink-subtle">Nenhum cliente encontrado.</p>
+          <p className="px-4 pb-8 text-center text-sm text-ink-subtle">{t("Nenhum cliente encontrado.")}</p>
         ) : (
           <>
             {/* Computador: tabela */}
@@ -224,16 +227,16 @@ export function ClientesList({
                 <tr className="border-y border-border text-left text-xs font-medium text-ink-subtle">
                   <th className="w-10 py-2.5 pl-4">
                     <Checkbox
-                      aria-label="Selecionar todos"
+                      aria-label={t("Selecionar todos")}
                       checked={allChecked}
                       onChange={(v) => setSelected(v ? new Set(list.map((c) => c.id ?? "")) : new Set())}
                     />
                   </th>
-                  <th className="px-4 py-2.5 font-medium">Cliente</th>
-                  <th className="px-4 py-2.5 font-medium">Bairro / cidade</th>
-                  <th className="px-4 py-2.5 font-medium">Canal</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Serviços</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Último atendimento</th>
+                  <th className="px-4 py-2.5 font-medium">{t("Cliente")}</th>
+                  <th className="px-4 py-2.5 font-medium">{t("Bairro / cidade")}</th>
+                  <th className="px-4 py-2.5 font-medium">{t("Canal")}</th>
+                  <th className="px-4 py-2.5 text-right font-medium">{t("Serviços")}</th>
+                  <th className="px-4 py-2.5 text-right font-medium">{t("Último atendimento")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,7 +248,7 @@ export function ClientesList({
                   >
                     <td className="py-3 pl-4" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
-                        aria-label={`Selecionar ${c.nome}`}
+                        aria-label={t("Selecionar {nome}", { nome: c.nome ?? "" })}
                         checked={selected.has(c.id ?? "")}
                         onChange={() => setSelected((s) => toggleId(s, c.id ?? ""))}
                       />
@@ -257,10 +260,10 @@ export function ClientesList({
                     <td className="px-4 py-3 text-ink-muted">
                       {[c.bairro, c.cidade].filter(Boolean).join(", ") || "—"}
                     </td>
-                    <td className="px-4 py-3 text-ink-muted">{c.canal ? CANAL_LABEL[c.canal] : "—"}</td>
+                    <td className="px-4 py-3 text-ink-muted">{c.canal ? t(CANAL_LABEL[c.canal]) : "—"}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{c.servicos_prestados ?? 0}</td>
                     <td className="px-4 py-3 text-right text-ink-muted tabular-nums">
-                      {c.ultimo_atendimento ? date(c.ultimo_atendimento) : "—"}
+                      {c.ultimo_atendimento ? fmt.date(c.ultimo_atendimento) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -272,7 +275,7 @@ export function ClientesList({
               {list.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 px-4 py-3">
                   <Checkbox
-                    aria-label={`Selecionar ${c.nome}`}
+                    aria-label={t("Selecionar {nome}", { nome: c.nome ?? "" })}
                     checked={selected.has(c.id ?? "")}
                     onChange={() => setSelected((s) => toggleId(s, c.id ?? ""))}
                   />
@@ -280,7 +283,7 @@ export function ClientesList({
                     <span className="flex justify-between gap-2">
                       <span className="truncate font-medium">{c.nome}</span>
                       <span className="shrink-0 text-xs text-ink-subtle tabular-nums">
-                        {c.servicos_prestados ?? 0} {c.servicos_prestados === 1 ? "serviço" : "serviços"}
+                        {c.servicos_prestados === 1 ? t("1 serviço") : t("{n} serviços", { n: c.servicos_prestados ?? 0 })}
                       </span>
                     </span>
                     <span className="block truncate text-xs text-ink-subtle">
@@ -329,16 +332,17 @@ export function ClientesList({
         onClose={() => setConfirm(null)}
         onConfirm={() => confirm && remove(confirm)}
         pending={pending}
-        title={confirm && confirm.length > 1 ? `Excluir ${confirm.length} clientes?` : "Excluir cliente?"}
+        title={confirm && confirm.length > 1 ? t("Excluir {n} clientes?", { n: confirm.length }) : t("Excluir cliente?")}
         description={
           <>
             {confirm && totalAtend(confirm) > 0 ? (
               <>
-                Os {totalAtend(confirm)} atendimentos e os orçamentos continuam salvos, com o cliente como “Não definido”.{" "}
+                {t("Os {n} atendimentos e os orçamentos continuam salvos, com o cliente como “Não definido”.", { n: totalAtend(confirm) })}{" "}
               </>
             ) : null}
-            Os equipamentos cadastrados {confirm && confirm.length > 1 ? "desses clientes" : "deste cliente"} serão apagados.
-            Isso não pode ser desfeito.
+            {confirm && confirm.length > 1
+              ? t("Os equipamentos cadastrados desses clientes serão apagados. Isso não pode ser desfeito.")
+              : t("Os equipamentos cadastrados deste cliente serão apagados. Isso não pode ser desfeito.")}
             {error ? <span className="mt-2 block text-danger">{error}</span> : null}
           </>
         }

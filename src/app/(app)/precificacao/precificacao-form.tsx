@@ -6,11 +6,13 @@ import { Card } from "@/components/ui/card";
 import { Feedback, MoneyInput, Select, Switch } from "@/components/ui/controls";
 import { Field } from "@/components/ui/input";
 import type { Tables } from "@/lib/database.types";
+import { useI18n } from "@/i18n/client";
 import { duration } from "@/lib/format";
 import { DURACOES } from "@/lib/labels";
 import { salvarPrecificacao, type PrecificacaoInput } from "./actions";
 
 export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
+  const { t } = useI18n();
   const [form, setForm] = useState<PrecificacaoInput>({
     tipo_precificacao: negocio.tipo_precificacao ?? "por_servico",
     valor_visita: negocio.valor_visita,
@@ -30,7 +32,7 @@ export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }
     e.preventDefault();
     start(async () => {
       const r = await salvarPrecificacao(form);
-      setResult(r.ok ? { kind: "ok", text: "Precificação salva." } : { kind: "error", text: r.error });
+      setResult(r.ok ? { kind: "ok", text: t("Precificação salva.") } : { kind: "error", text: t(r.error) });
     });
   }
 
@@ -42,16 +44,16 @@ export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }
     <form onSubmit={onSubmit}>
       <Card className="grid max-w-[720px] gap-5 p-5 sm:p-6">
         <p className="text-[13px] text-ink-subtle">
-          Esses valores vêm preenchidos em cada novo atendimento e orçamento. Você pode mudar em cada um.
+          {t("Esses valores vêm preenchidos em cada novo atendimento e orçamento. Você pode mudar em cada um.")}
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Tipo de precificação" htmlFor="tp">
+          <Field label={t("Tipo de precificação")} htmlFor="tp">
             <Select id="tp" value={form.tipo_precificacao} onChange={(e) => set({ tipo_precificacao: e.target.value })}>
-              <option value="por_servico">Por serviço (valor fixo de cada serviço)</option>
-              <option value="por_hora">Por hora técnica</option>
+              <option value="por_servico">{t("Por serviço (valor fixo de cada serviço)")}</option>
+              <option value="por_hora">{t("Por hora técnica")}</option>
             </Select>
           </Field>
-          <Field label="Duração padrão da visita técnica" htmlFor="dur">
+          <Field label={t("Duração padrão da visita técnica")} htmlFor="dur">
             <Select
               id="dur"
               value={form.duracao_visita_min}
@@ -64,10 +66,10 @@ export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }
               ))}
             </Select>
           </Field>
-          <Field label="Valor da visita padrão" htmlFor="vv">
+          <Field label={t("Valor da visita padrão")} htmlFor="vv">
             <MoneyInput id="vv" value={form.valor_visita} onChange={(v) => set({ valor_visita: v })} />
           </Field>
-          <Field label="Valor adicional por km" htmlFor="vkm" hint="Para uso futuro no cálculo de deslocamento">
+          <Field label={t("Valor adicional por km")} htmlFor="vkm" hint={t("Para uso futuro no cálculo de deslocamento")}>
             <MoneyInput id="vkm" value={form.valor_km} onChange={(v) => set({ valor_km: v })} />
           </Field>
         </div>
@@ -76,10 +78,10 @@ export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }
           <Switch
             checked={form.cobrar_visita}
             onChange={(v) => set({ cobrar_visita: v })}
-            label={<span className="font-medium">Cobrar visita por padrão</span>}
+            label={<span className="font-medium">{t("Cobrar visita por padrão")}</span>}
           />
           <p className="mt-1.5 pl-11 text-xs text-ink-subtle">
-            Desligado: o valor da visita não entra sozinho no total dos novos atendimentos.
+            {t("Desligado: o valor da visita não entra sozinho no total dos novos atendimentos.")}
           </p>
         </div>
 
@@ -87,7 +89,7 @@ export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }
 
         <div className="flex justify-end">
           <Button type="submit" variant="dark" disabled={pending} className="w-full sm:w-auto">
-            {pending ? "Salvando…" : "Salvar precificação"}
+            {pending ? t("Salvando…") : t("Salvar precificação")}
           </Button>
         </div>
       </Card>

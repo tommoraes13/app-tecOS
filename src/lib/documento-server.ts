@@ -38,15 +38,15 @@ export async function carregarApoio(supabase: Client) {
   };
 }
 
-export function formularioVazio(numero: number, padroes: Padroes, clienteId: string | null): DocForm {
+export function formularioVazio(numero: number, padroes: Padroes, clienteId: string | null, hoje = todayISO()): DocForm {
   return {
     numero,
     cliente_id: clienteId,
     relato: "",
-    data: todayISO(),
+    data: hoje,
     status: "em_andamento",
     distancia_km: null,
-    visitas: [{ key: newKey(), data: todayISO(), hora: "", duracao_min: padroes.duracao_visita_min, auto: true }],
+    visitas: [{ key: newKey(), data: hoje, hora: "", duracao_min: padroes.duracao_visita_min, auto: true }],
     equipamentos: [],
     servicos_ativos: false,
     servicos: [],

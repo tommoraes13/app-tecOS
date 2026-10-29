@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Feedback, Select, Switch, Textarea } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { useI18n } from "@/i18n/client";
 import type { Enums, Tables } from "@/lib/database.types";
 import { asSpecs, CAMPOS, NOME_PLACEHOLDER, secretKeys, type TipoEquipamento } from "@/lib/equipamentos";
 import { ESTADO_LABEL, EQUIPAMENTO_LABEL } from "@/lib/labels";
@@ -43,6 +44,7 @@ export function EquipamentoModal({
   onSaved: (e: EquipamentoSalvo) => void;
   onDeleted?: () => void;
 }) {
+  const { t } = useI18n();
   const [form, setForm] = useState<EquipamentoInput>(() => toInput(clienteId, equipamento));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -65,7 +67,7 @@ export function EquipamentoModal({
   function save() {
     start(async () => {
       const r = await salvarEquipamento(form);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       onSaved(r.data);
     });
   }
@@ -75,7 +77,7 @@ export function EquipamentoModal({
     if (!confirmDelete) return setConfirmDelete(true);
     start(async () => {
       const r = await excluirEquipamento(equipamento.id);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       onDeleted?.();
     });
   }
@@ -88,26 +90,26 @@ export function EquipamentoModal({
       open={open}
       onClose={onClose}
       size="lg"
-      title={equipamento ? "Editar equipamento" : "Novo equipamento"}
+      title={equipamento ? t("Editar equipamento") : t("Novo equipamento")}
       footer={
         <>
           {equipamento && onDeleted ? (
             <Button variant="danger" onClick={remove} disabled={pending} className="mr-auto">
-              {confirmDelete ? "Confirmar exclusão" : "Excluir"}
+              {confirmDelete ? t("Confirmar exclusão") : t("Excluir")}
             </Button>
           ) : null}
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("Cancelar")}
           </Button>
           <Button variant="dark" onClick={save} disabled={pending}>
-            {pending ? "Salvando…" : "Salvar equipamento"}
+            {pending ? t("Salvando…") : t("Salvar equipamento")}
           </Button>
         </>
       }
     >
       <div className="grid gap-5">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Tipo do equipamento" required htmlFor="eq-tipo">
+          <Field label={t("Tipo do equipamento")} required htmlFor="eq-tipo">
             <Select
               id="eq-tipo"
               value={form.tipo}
@@ -115,15 +117,15 @@ export function EquipamentoModal({
             >
               {Object.entries(EQUIPAMENTO_LABEL).map(([v, l]) => (
                 <option key={v} value={v}>
-                  {l}
+                  {t(l)}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Nome do equipamento" required htmlFor="eq-nome">
+          <Field label={t("Nome do equipamento")} required htmlFor="eq-nome">
             <Input
               id="eq-nome"
-              placeholder={NOME_PLACEHOLDER[form.tipo]}
+              placeholder={t(NOME_PLACEHOLDER[form.tipo])}
               value={form.nome}
               onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
             />
@@ -132,7 +134,7 @@ export function EquipamentoModal({
 
         {grupos.map((g) => (
           <section key={g} className="grid gap-3">
-            {g ? <h3 className="text-sm font-semibold">{g}</h3> : null}
+            {g ? <h3 className="text-sm font-semibold">{t(g)}</h3> : null}
             <div className="grid gap-3 sm:grid-cols-2">
               {campos
                 .filter((c) => (c.group ?? "") === g)
@@ -142,13 +144,13 @@ export function EquipamentoModal({
                   if (c.kind === "toggle") {
                     return (
                       <div key={c.key} className={cn("flex min-h-11 items-center", c.wide && "sm:col-span-2")}>
-                        <Switch checked={v === true} onChange={(on) => setSpec(c.key, on)} label={c.label} />
+                        <Switch checked={v === true} onChange={(on) => setSpec(c.key, on)} label={t(c.label)} />
                       </div>
                     );
                   }
                   return (
                     <div key={c.key} className={cn(c.wide && "sm:col-span-2")}>
-                      <Field label={c.label} required={c.required} htmlFor={id}>
+                      <Field label={t(c.label)} required={c.required} htmlFor={id}>
                         {c.kind === "secret" ? (
                           <SecretInput
                             id={id}
@@ -160,17 +162,17 @@ export function EquipamentoModal({
                           />
                         ) : c.kind === "select" ? (
                           <Select id={id} value={typeof v === "string" ? v : ""} onChange={(e) => setSpec(c.key, e.target.value)}>
-                            <option value="">Selecione</option>
+                            <option value="">{t("Selecione")}</option>
                             {c.options?.map((o) => (
                               <option key={o} value={o}>
-                                {o}
+                                {t(o)}
                               </option>
                             ))}
                           </Select>
                         ) : (
                           <Input
                             id={id}
-                            placeholder={c.placeholder}
+                            placeholder={c.placeholder ? t(c.placeholder) : undefined}
                             className={cn(c.kind === "mono" && "font-mono text-[13px]")}
                             value={typeof v === "string" ? v : ""}
                             onChange={(e) => setSpec(c.key, e.target.value)}
@@ -185,7 +187,7 @@ export function EquipamentoModal({
         ))}
 
         <section className="grid gap-3">
-          <h3 className="text-sm font-semibold">Estado geral</h3>
+          <h3 className="text-sm font-semibold">{t("Estado geral")}</h3>
           <div className="flex flex-wrap gap-2">
             {(Object.keys(ESTADO_LABEL) as Enums<"equipamento_estado">[]).map((estado) => (
               <button
@@ -199,14 +201,14 @@ export function EquipamentoModal({
                     : "border-border text-ink-muted hover:bg-surface-muted",
                 )}
               >
-                {ESTADO_LABEL[estado]}
+                {t(ESTADO_LABEL[estado])}
               </button>
             ))}
           </div>
           {form.estado_geral ? (
             <Textarea
-              aria-label="Detalhes do estado"
-              placeholder="Detalhes: o que está funcionando, qual o defeito, desde quando"
+              aria-label={t("Detalhes do estado")}
+              placeholder={t("Detalhes: o que está funcionando, qual o defeito, desde quando")}
               value={form.estado_detalhe}
               onChange={(e) => setForm((f) => ({ ...f, estado_detalhe: e.target.value }))}
             />

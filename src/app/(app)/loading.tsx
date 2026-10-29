@@ -5,7 +5,7 @@ function Bar({ className }: { className: string }) {
 
 export default function Loading() {
   return (
-    <div aria-busy="true" aria-label="Carregando">
+    <div aria-busy="true">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8">
         <div className="space-y-2">
           <Bar className="h-7 w-56 lg:h-8" />

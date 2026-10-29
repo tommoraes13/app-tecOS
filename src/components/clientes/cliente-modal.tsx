@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Feedback, Select, Textarea } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { useI18n } from "@/i18n/client";
 import type { Enums, Tables } from "@/lib/database.types";
 import { cep, phone } from "@/lib/format";
 import { CANAL_LABEL } from "@/lib/labels";
@@ -45,6 +46,7 @@ export function ClienteModal({
   nomeInicial?: string;
   onSaved: (cliente: Cliente) => void;
 }) {
+  const { t } = useI18n();
   const [form, setForm] = useState<ClienteInput>(() => toInput(cliente, nomeInicial));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -61,7 +63,7 @@ export function ClienteModal({
   function save() {
     start(async () => {
       const r = await salvarCliente(form);
-      if (!r.ok) return setError(r.error);
+      if (!r.ok) return setError(t(r.error));
       onSaved(r.data);
     });
   }
@@ -70,14 +72,14 @@ export function ClienteModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={cliente ? "Editar cliente" : "Novo cliente"}
+      title={cliente ? t("Editar cliente") : t("Novo cliente")}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("Cancelar")}
           </Button>
           <Button variant="dark" onClick={save} disabled={pending}>
-            {pending ? "Salvando…" : "Salvar cliente"}
+            {pending ? t("Salvando…") : t("Salvar cliente")}
           </Button>
         </>
       }
@@ -85,11 +87,11 @@ export function ClienteModal({
       <div className="grid gap-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Field label="Nome do cliente" required htmlFor="cl-nome">
+            <Field label={t("Nome do cliente")} required htmlFor="cl-nome">
               <Input id="cl-nome" autoFocus value={form.nome} onChange={(e) => set({ nome: e.target.value })} />
             </Field>
           </div>
-          <Field label="Telefone" required htmlFor="cl-tel">
+          <Field label={t("Telefone")} required htmlFor="cl-tel">
             <Input
               id="cl-tel"
               type="tel"
@@ -99,20 +101,20 @@ export function ClienteModal({
               onChange={(e) => set({ telefone: phone(e.target.value) })}
             />
           </Field>
-          <Field label="E-mail" htmlFor="cl-email">
+          <Field label={t("E-mail")} htmlFor="cl-email">
             <Input id="cl-email" type="email" value={form.email} onChange={(e) => set({ email: e.target.value })} />
           </Field>
           <div className="sm:col-span-2">
-            <Field label="Como chegou até você" htmlFor="cl-canal">
+            <Field label={t("Como chegou até você")} htmlFor="cl-canal">
               <Select
                 id="cl-canal"
                 value={form.canal}
                 onChange={(e) => set({ canal: e.target.value as Enums<"cliente_canal"> | "" })}
               >
-                <option value="">Não informado</option>
+                <option value="">{t("Não informado")}</option>
                 {Object.entries(CANAL_LABEL).map(([v, l]) => (
                   <option key={v} value={v}>
-                    {l}
+                    {t(l)}
                   </option>
                 ))}
               </Select>
@@ -121,7 +123,7 @@ export function ClienteModal({
         </div>
 
         <div className="grid gap-3">
-          <h3 className="text-sm font-semibold">Endereço</h3>
+          <h3 className="text-sm font-semibold">{t("Endereço")}</h3>
           <AddressFields
             idPrefix="cliente"
             value={{
@@ -137,7 +139,7 @@ export function ClienteModal({
           />
         </div>
 
-        <Field label="Observações" htmlFor="cl-obs">
+        <Field label={t("Observações")} htmlFor="cl-obs">
           <Textarea id="cl-obs" value={form.observacoes} onChange={(e) => set({ observacoes: e.target.value })} />
         </Field>
 

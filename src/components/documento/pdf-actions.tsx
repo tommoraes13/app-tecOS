@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Download, FileText, Loader2, Share2 } from "lucide-react";
+import { useI18n } from "@/i18n/client";
 import { docNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -20,10 +21,11 @@ export function PdfActions({
   numero: number;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [sharing, setSharing] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const url = `/api/pdf/${tipo}/${id}`;
-  const nome = `${tipo === "os" ? "OS" : "Orcamento"}-${docNumber(numero)}.pdf`;
+  const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(numero)}.pdf`;
 
   async function compartilhar() {
     setErro(null);
@@ -33,7 +35,7 @@ export function PdfActions({
       if (!res.ok) throw new Error("pdf");
       const blob = await res.blob();
       const file = new File([blob], nome, { type: "application/pdf" });
-      const titulo = `${tipo === "os" ? "Ordem de serviço" : "Orçamento"} ${docNumber(numero)}`;
+      const titulo = `${tipo === "os" ? t("Ordem de serviço") : t("Orçamento")} ${docNumber(numero)}`;
       if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: titulo });
       } else {
@@ -45,7 +47,7 @@ export function PdfActions({
         URL.revokeObjectURL(a.href);
       }
     } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) setErro("Não foi possível gerar o PDF agora.");
+      if (!(e instanceof DOMException && e.name === "AbortError")) setErro(t("Não foi possível gerar o PDF agora."));
     } finally {
       setSharing(false);
     }
@@ -56,15 +58,15 @@ export function PdfActions({
       <div className="flex gap-2">
         <a href={url} target="_blank" rel="noreferrer" className={btn}>
           <FileText className="size-4" />
-          Ver PDF
+          {t("Ver PDF")}
         </a>
-        <a href={`${url}?baixar=1`} className={btn} aria-label="Baixar PDF">
+        <a href={`${url}?baixar=1`} className={btn} aria-label={t("Baixar PDF")}>
           <Download className="size-4" />
-          Baixar
+          {t("Baixar")}
         </a>
         <button type="button" onClick={compartilhar} disabled={sharing} className={btn}>
           {sharing ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />}
-          Enviar
+          {t("Enviar")}
         </button>
       </div>
       {erro ? <p className="text-xs text-danger">{erro}</p> : null}
