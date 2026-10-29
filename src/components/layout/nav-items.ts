@@ -17,24 +17,24 @@ export type NavItem = {
   children?: { href: string; label: string }[];
 };
 
-/** Menu lateral. A Tabela de Preços entra quando for construída. */
+/** Menu lateral, na ordem combinada com o dono. */
 export const mainNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/agenda", label: "Minha Agenda", icon: CalendarDays },
-  { href: "/orcamentos", label: "Orçamentos", icon: FileText },
   { href: "/servicos", label: "Atendimentos", icon: Wrench },
+  { href: "/agenda", label: "Minha Agenda", icon: CalendarDays },
   { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/orcamentos", label: "Orçamentos", icon: FileText },
   {
     href: "/cadastros",
-    label: "Cadastros",
+    label: "Meu Catálogo",
     icon: FolderOpen,
     children: [
-      { href: "/cadastros/servicos", label: "Cadastro de Serviços" },
-      { href: "/cadastros/produtos", label: "Cadastro de Produtos" },
-      { href: "/cadastros/templates", label: "Cadastro de Templates" },
+      { href: "/cadastros/servicos", label: "Serviços" },
+      { href: "/cadastros/produtos", label: "Produtos" },
+      { href: "/cadastros/templates", label: "Modelos" },
     ],
   },
-  { href: "/precificacao", label: "Precificação", icon: Tags },
+  { href: "/precificacao", label: "Tabela de Preços", icon: Tags },
 ];
 
 export const secondaryNav: NavItem[] = [{ href: "/meu-negocio", label: "Meu Negócio", icon: Briefcase }];

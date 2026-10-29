@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fail, requireUser, txt, type ActionResult } from "@/lib/actions";
 import { decrypt, encrypt, hasEncryptionKey } from "@/lib/crypto";
 import type { Enums, Json, Tables } from "@/lib/database.types";
-import { CAMPOS, type Specs, type TipoEquipamento } from "@/lib/equipamentos";
+import { CAMPOS, ESTADO_ATIVO, ESTADO_CAMPOS, type Specs, type TipoEquipamento } from "@/lib/equipamentos";
 import { onlyDigits } from "@/lib/format";
 
 export type ClienteInput = {
@@ -101,6 +101,14 @@ export async function salvarEquipamento(input: EquipamentoInput): Promise<Action
       const v = input.specs[c.key];
       if (c.kind === "toggle") specs[c.key] = v === true;
       else if (typeof v === "string" && v.trim()) specs[c.key] = v.trim();
+    }
+    // Estado geral (Sintomas, Defeitos, Solução): textos livres, guardados quando a seção está ligada.
+    if (input.specs[ESTADO_ATIVO] === true) {
+      specs[ESTADO_ATIVO] = true;
+      for (const c of ESTADO_CAMPOS) {
+        const v = input.specs[c.key];
+        if (typeof v === "string" && v.trim()) specs[c.key] = v.trim();
+      }
     }
     // SSID 5G segue o 2.4G quando não for informado.
     if (input.tipo === "rede" && !specs.ssid_5 && typeof specs.ssid_24 === "string") specs.ssid_5 = specs.ssid_24;

@@ -52,7 +52,12 @@
 
   --td-shadow-card: 0 1px 2px rgba(15, 26, 20, 0.05);
   --td-shadow-pop: 0 16px 40px rgba(15, 26, 20, 0.14);
-  --td-shadow-cta: 0 6px 16px rgba(10, 58, 42, 0.28);
+  --td-shadow-cta: 0 6px 16px rgba(14, 50, 90, 0.3);
+  --cta-from: #0a7ea4;
+  --cta-via: #0b5f86;
+  --cta-to: #16244a;
+  --cta-ink: #0b5f86;
+  --on-cta-muted: #d6ecf5;
 
   color-scheme: light;
 }
@@ -102,6 +107,11 @@
   --td-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --td-shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.55);
   --td-shadow-cta: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --cta-from: #0a7ea4;
+  --cta-via: #0b5f86;
+  --cta-to: #16244a;
+  --cta-ink: #0b5f86;
+  --on-cta-muted: #d6ecf5;
 
   color-scheme: dark;
 }
@@ -148,6 +158,8 @@
   --color-pink: var(--pink);
   --color-pink-bg: var(--pink-bg);
   --color-danger-solid: var(--danger-solid);
+  --color-cta-ink: var(--cta-ink);
+  --color-on-cta-muted: var(--on-cta-muted);
 
   --shadow-card: var(--td-shadow-card);
   --shadow-pop: var(--td-shadow-pop);
@@ -165,9 +177,12 @@
   /* Medidas de layout: menu 248px · painel lateral 440px · modal 640px (OS 760px) · conteúdo até 1280px. */
 }
 
-/* Degradê verde da marca: só no botão de destaque, no card de destaque e no logo. */
+/*
+ * Degradê da marca (azul, a partir da referência do dono): só no botão de destaque, no card de destaque e no logo.
+ * O ponto inicial é um ciano um pouco mais fechado que a referência para o texto branco continuar legível.
+ */
 @utility bg-brand-gradient {
-  background-image: linear-gradient(135deg, var(--brand-900), var(--brand-600));
+  background-image: linear-gradient(120deg, var(--cta-from), var(--cta-via) 48%, var(--cta-to));
 }
 
 @layer base {
@@ -196,7 +211,20 @@
     appearance: none;
     min-width: 0;
     max-width: 100%;
-    display: block;
+    display: flex;
+    align-items: center;
+  }
+  /* iPhone: a data ficava centralizada e deslocada dentro da caixa; alinha à esquerda, no meio da altura. */
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit {
+    padding: 0;
+    line-height: 1.25;
   }
   input[type="date"]::-webkit-date-and-time-value,
   input[type="time"]::-webkit-date-and-time-value {

@@ -68,12 +68,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         icon={{ morning: Sun, afternoon: Sunset, evening: Moon }[fmt.dayPart()]}
         title={`${saudacao}${nome ? `, ${nome}` : ""}!`}
         description={t("{inicio} a {fim}", { inicio: fmt.date(m.r.inicio), fim: fmt.date(m.r.fim) })}
+        actionsClassName="w-full flex-nowrap sm:w-auto"
         actions={
           <>
-            <ButtonLink href="/orcamentos/novo" variant="outline">
+            <ButtonLink href="/orcamentos/novo" variant="outline" className="flex-1 px-3 text-[13px] sm:flex-none sm:px-4 sm:text-sm lg:text-base">
               {t("Novo orçamento")}
             </ButtonLink>
-            <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />}>
+            <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />} className="flex-1 text-[13px] sm:flex-none sm:text-sm">
               {t("Novo atendimento")}
             </ButtonLink>
           </>

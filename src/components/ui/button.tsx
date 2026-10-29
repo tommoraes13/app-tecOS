@@ -28,7 +28,8 @@ export const buttonVariants = cva(
         sm: "h-8 px-3 text-[13px]",
       },
     },
-    compoundVariants: [{ variant: "cta", size: "md", className: "pr-[18px] pl-1.5" }],
+    // Botão de destaque como ajustado pelo dono no quadro de design: bolinha com respiro e texto maior no computador.
+    compoundVariants: [{ variant: "cta", size: "md", className: "pr-5 pl-2 opacity-95 hover:opacity-100 lg:pl-5 lg:text-base" }],
     defaultVariants: { variant: "outline", size: "md" },
   },
 );
@@ -38,7 +39,7 @@ type ButtonVariantProps = VariantProps<typeof buttonVariants>;
 /** Bolinha branca com o ícone, usada dentro do botão de destaque. */
 function CtaBubble({ children }: { children: React.ReactNode }) {
   return (
-    <span className="grid size-7 place-items-center rounded-full bg-on-brand text-brand-700">
+    <span className="grid size-7 place-items-center rounded-full bg-on-brand text-cta-ink">
       {children}
     </span>
   );

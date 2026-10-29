@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /** Ícone discreto ao lado do título da tela. */
 export function TitleIcon({ icon: Icon }: { icon: LucideIcon }) {
@@ -15,11 +16,14 @@ export function PageHeader({
   description,
   actions,
   icon,
+  actionsClassName,
 }: {
   title: string;
   description?: string;
   actions?: React.ReactNode;
   icon?: LucideIcon;
+  /** Classes extras do grupo de botões (ex.: dois botões lado a lado no celular). */
+  actionsClassName?: string;
 }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8">
@@ -30,7 +34,7 @@ export function PageHeader({
           {description ? <p className="mt-1 text-[13px] leading-[18px] text-ink-subtle">{description}</p> : null}
         </div>
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{actions}</div> : null}
     </div>
   );
 }

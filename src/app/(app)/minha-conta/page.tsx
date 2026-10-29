@@ -1,6 +1,7 @@
 import { UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
+import { VoltarMobile } from "@/components/layout/voltar-mobile";
 import { getI18n } from "@/i18n/server";
 import { getPerfil } from "@/lib/perfil";
 import { ContaForms } from "./conta-forms";
@@ -20,6 +21,7 @@ export default async function MinhaContaPage() {
       <div className="grid max-w-[720px] gap-6">
         <PerfilForm perfil={perfil} />
         <ContaForms />
+        <VoltarMobile />
       </div>
     </>
   );

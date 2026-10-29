@@ -27,7 +27,7 @@ export function StatCard({
         featured ? "bg-brand-gradient text-on-brand shadow-cta" : "bg-surface shadow-card",
       )}
     >
-      <span className={cn("text-[13px] leading-[18px]", featured ? "text-on-brand-muted" : "text-ink-muted")}>
+      <span className={cn("text-[13px] leading-[18px]", featured ? "text-on-cta-muted" : "text-ink-muted")}>
         {label}
       </span>
       <div
@@ -50,7 +50,7 @@ export function StatCard({
         ) : null}
       </div>
       {rows.length > 0 ? (
-        <div className={cn("grid gap-1 text-xs", featured ? "text-on-brand-muted" : "text-ink-subtle")}>
+        <div className={cn("grid gap-1 text-xs", featured ? "text-on-cta-muted" : "text-ink-subtle")}>
           {rows.map((r) => (
             <div key={r.label} className="flex justify-between gap-2">
               {r.label}

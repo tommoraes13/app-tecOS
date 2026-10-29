@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { VoltarMobile } from "@/components/layout/voltar-mobile";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Feedback, MoneyInput, Select, Switch } from "@/components/ui/controls";
@@ -87,7 +88,8 @@ export function PrecificacaoForm({ negocio }: { negocio: Tables<"meu_negocio"> }
 
         {result ? <Feedback kind={result.kind}>{result.text}</Feedback> : null}
 
-        <div className="flex justify-end">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <VoltarMobile />
           <Button type="submit" variant="dark" disabled={pending} className="w-full sm:w-auto">
             {pending ? t("Salvando…") : t("Salvar precificação")}
           </Button>

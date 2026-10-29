@@ -31,7 +31,7 @@ export function MobileNav({ actions }: { actions?: React.ReactNode }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface px-3 lg:hidden">
+      <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border bg-surface px-3 pt-[max(8px,env(safe-area-inset-top))] pb-2 lg:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}

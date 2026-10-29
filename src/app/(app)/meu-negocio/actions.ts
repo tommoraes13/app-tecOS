@@ -50,3 +50,21 @@ export async function salvarEmpresa(input: EmpresaInput): Promise<ActionResult> 
     return fail(e);
   }
 }
+
+/** Grava (ou tira) o logotipo do negócio. O arquivo é enviado pelo navegador direto para a pasta do usuário. */
+export async function salvarLogo(path: string | null): Promise<ActionResult> {
+  try {
+    const { supabase, user } = await requireUser();
+    if (path && !new RegExp(`^${user.id}/logo-\\d+\\.png$`).test(path)) return { ok: false, error: "Arquivo inválido." };
+    const { data: atual } = await supabase.from("meu_negocio").select("logo_url").eq("user_id", user.id).maybeSingle();
+    const { error } = await supabase.from("meu_negocio").update({ logo_url: path }).eq("user_id", user.id);
+    if (error) return fail(error);
+    if (atual?.logo_url && atual.logo_url !== path && atual.logo_url.startsWith(`${user.id}/`)) {
+      await supabase.storage.from("avatars").remove([atual.logo_url]);
+    }
+    revalidatePath("/meu-negocio");
+    return { ok: true, data: null };
+  } catch (e) {
+    return fail(e);
+  }
+}

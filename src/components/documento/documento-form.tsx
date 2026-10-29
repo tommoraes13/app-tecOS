@@ -148,6 +148,66 @@ export function DocumentoForm({
   const salvoRef = useRef(JSON.stringify(initial));
   const alterado = JSON.stringify(form) !== salvoRef.current;
 
+  // ---- Salvamento automático ----------------------------------------------------------
+  // Documento novo: guarda um rascunho neste aparelho até o primeiro Salvar (não gasta número).
+  // Documento já salvo: grava sozinho alguns segundos depois de cada mudança.
+  const chaveRascunho = `tecdesk:rascunho:${mode}`;
+  const [rascunho, setRascunho] = useState<{ form: DocForm; em: string } | null>(null);
+  const [auto, setAuto] = useState<{ kind: "ok" | "saving" | "error"; text: string } | null>(null);
+  const salvandoRef = useRef(false);
+
+  useEffect(() => {
+    if (initial.id) return;
+    try {
+      const raw = window.localStorage.getItem(chaveRascunho);
+      if (!raw) return;
+      const r = JSON.parse(raw) as { form: DocForm; em: string };
+      if (r?.form && JSON.stringify(r.form) !== JSON.stringify(initial)) setRascunho(r);
+    } catch {
+      // sem acesso ao armazenamento do navegador: segue sem rascunho
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (form.id || !alterado || rascunho) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(chaveRascunho, JSON.stringify({ form: { ...form, numero: initial.numero }, em: new Date().toISOString() }));
+      } catch {
+        // sem acesso ao armazenamento: ignora
+      }
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [form, alterado, rascunho, chaveRascunho, initial.numero]);
+
+  const limparRascunho = useCallback(() => {
+    try {
+      window.localStorage.removeItem(chaveRascunho);
+    } catch {
+      // ignora
+    }
+  }, [chaveRascunho]);
+
+  useEffect(() => {
+    if (!form.id || !alterado || pending) return;
+    const timer = window.setTimeout(async () => {
+      if (salvandoRef.current) return;
+      salvandoRef.current = true;
+      const enviado = form;
+      setAuto({ kind: "saving", text: t("Salvando…") });
+      const r = isOS ? await salvarAtendimento(enviado) : await salvarOrcamento(enviado);
+      salvandoRef.current = false;
+      if (r.ok) {
+        salvoRef.current = JSON.stringify({ ...enviado, numero: r.data.numero });
+        setAuto({ kind: "ok", text: t("Salvo automaticamente às {hora}", { hora: fmt.time(new Date()) }) });
+      } else {
+        setAuto({ kind: "error", text: t("Não salvou sozinho: {erro}", { erro: t(r.error) }) });
+      }
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [form, alterado, pending, isOS, t, fmt]);
+
   /** Salva sem mudar de tela (usado pelo aviso de saída). */
   async function salvarParaSair() {
     const enviado = form;
@@ -157,6 +217,7 @@ export function DocumentoForm({
       return false;
     }
     salvoRef.current = JSON.stringify({ ...enviado, numero: r.data.numero });
+    limparRascunho();
     return true;
   }
 
@@ -166,6 +227,7 @@ export function DocumentoForm({
       const r = isOS ? await salvarAtendimento(enviado) : await salvarOrcamento(enviado);
       if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
       salvoRef.current = JSON.stringify({ ...enviado, numero: r.data.numero });
+      limparRascunho();
       afterSave(r.data.id, r.data.numero, isOS ? t("Atendimento salvo.") : t("Orçamento salvo."));
     });
   }
@@ -175,6 +237,7 @@ export function DocumentoForm({
     start(async () => {
       const r = await finalizarAtendimento(enviado);
       if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
+      limparRascunho();
       salvoRef.current = JSON.stringify({
         ...enviado,
         numero: r.data.numero,
@@ -195,6 +258,7 @@ export function DocumentoForm({
       const r = await transformarEmAtendimento(enviado);
       if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
       salvoRef.current = JSON.stringify(enviado);
+      limparRascunho();
       router.push(`/servicos/${r.data.osId}`);
     });
   }
@@ -222,7 +286,47 @@ export function DocumentoForm({
 
   const acoes = (
     <div className="grid gap-2">
+      {rascunho ? (
+        <div className="grid gap-2 rounded-lg bg-info-bg p-3 text-[13px] text-info">
+          <span>{t("Você tem um rascunho não salvo de {data}.", { data: `${fmt.date(rascunho.em.slice(0, 10))} ${fmt.time(new Date(rascunho.em))}` })}</span>
+          <span className="flex gap-2">
+            <Button
+              size="sm"
+              variant="dark"
+              onClick={() => {
+                const cid = rascunho.form.cliente_id;
+                setForm({ ...rascunho.form, id: undefined, numero: initial.numero });
+                setRascunho(null);
+                // O cliente do rascunho pode não estar na lista inicial do campo.
+                if (cid && !clientes.some((c) => c.id === cid)) {
+                  void createClient()
+                    .from("base_clientes")
+                    .select("id, nome, telefone, bairro, cidade")
+                    .eq("id", cid)
+                    .maybeSingle()
+                    .then(({ data }) => data && setClientes((l) => [...l, data as ClienteOpcao]));
+                }
+              }}
+            >
+              {t("Recuperar rascunho")}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                limparRascunho();
+                setRascunho(null);
+              }}
+            >
+              {t("Descartar")}
+            </Button>
+          </span>
+        </div>
+      ) : null}
       {feedback ? <Feedback kind={feedback.kind}>{feedback.text}</Feedback> : null}
+      {auto && !feedback ? (
+        <p className={cn("text-xs", auto.kind === "error" ? "text-danger" : "text-ink-subtle")}>{auto.text}</p>
+      ) : null}
       {isOS ? (
         <Card className="grid gap-2 p-4">
           <span className="text-[13px] font-semibold">{t("Status do atendimento")}</span>
@@ -890,16 +994,24 @@ export function DocumentoForm({
       </div>
 
       {/* Celular: ações no fim da página */}
-      <div className="mt-4 pb-20 lg:hidden">{acoes}</div>
+      <div className="mt-4 pb-24 lg:hidden">{acoes}</div>
 
-      {/* Celular: barra fixa com o total e o botão de salvar */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-surface px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-pop lg:hidden">
+      {/* Celular: barra fixa com Voltar, o total e o botão de salvar (com folga do fim da tela) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-surface px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))] shadow-pop lg:hidden">
+        <Link
+          href={base}
+          aria-label={t("Voltar")}
+          className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border px-3 text-sm font-medium text-ink-muted"
+        >
+          <ArrowLeft className="size-4" />
+          {t("Voltar")}
+        </Link>
         <div className="min-w-0 flex-1">
           <span className="block text-xs text-ink-subtle">{t("Total")}</span>
           <span className="block truncate text-lg leading-6 font-semibold tabular-nums">{money(tot.total)}</span>
         </div>
         <Button variant="dark" onClick={salvar} disabled={pending}>
-          {pending ? t("Salvando…") : isOS ? t("Salvar atendimento") : t("Salvar orçamento")}
+          {pending ? t("Salvando…") : t("Salvar")}
         </Button>
       </div>
 

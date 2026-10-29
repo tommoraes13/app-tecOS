@@ -3,17 +3,27 @@
 import { useEffect, useState, useTransition } from "react";
 import { excluirEquipamento, salvarEquipamento, type EquipamentoInput, type EquipamentoSalvo } from "@/app/(app)/clientes/actions";
 import { Button } from "@/components/ui/button";
-import { Feedback, Select, Switch, Textarea } from "@/components/ui/controls";
+import { CollapsibleSection, Feedback, Select, Switch, Textarea } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useI18n } from "@/i18n/client";
-import type { Enums, Tables } from "@/lib/database.types";
-import { asSpecs, CAMPOS, NOME_PLACEHOLDER, secretKeys, type TipoEquipamento } from "@/lib/equipamentos";
-import { ESTADO_LABEL, EQUIPAMENTO_LABEL } from "@/lib/labels";
+import type { Tables } from "@/lib/database.types";
+import { asSpecs, CAMPOS, ESTADO_ATIVO, ESTADO_CAMPOS, GRUPOS, NOME_PLACEHOLDER, secretKeys, type TipoEquipamento } from "@/lib/equipamentos";
+import { EQUIPAMENTO_LABEL } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { SecretInput } from "./secret-field";
 
 type Equipamento = Tables<"base_equipamentos">;
+
+/** Equipamento antigo com "detalhes do estado": vira o texto de Sintomas na seção nova. */
+function comEstadoAntigo(e?: Equipamento | null) {
+  const specs = e ? asSpecs(e.especificacoes) : {};
+  if (e?.estado_detalhe && !specs.estado_sintomas) {
+    specs[ESTADO_ATIVO] = true;
+    specs.estado_sintomas = e.estado_detalhe;
+  }
+  return specs;
+}
 
 function toInput(clienteId: string, e?: Equipamento | null): EquipamentoInput {
   return {
@@ -21,7 +31,7 @@ function toInput(clienteId: string, e?: Equipamento | null): EquipamentoInput {
     cliente_id: e?.cliente_id ?? clienteId,
     tipo: e?.tipo ?? "desktop",
     nome: e?.nome ?? "",
-    specs: e ? asSpecs(e.especificacoes) : {},
+    specs: comEstadoAntigo(e),
     senhas: {},
     estado_geral: e?.estado_geral ?? "",
     estado_detalhe: e?.estado_detalhe ?? "",
@@ -83,7 +93,7 @@ export function EquipamentoModal({
   }
 
   const campos = CAMPOS[form.tipo].filter((c) => !c.showIf || c.showIf(form.specs));
-  const grupos = [...new Set(campos.map((c) => c.group ?? ""))];
+  const grupos = GRUPOS.filter((g) => campos.some((c) => (c.group ?? "Outros") === g));
 
   return (
     <Modal
@@ -132,13 +142,22 @@ export function EquipamentoModal({
           </Field>
         </div>
 
-        {grupos.map((g) => (
-          <section key={g} className="grid gap-3">
-            {g ? <h3 className="text-sm font-semibold">{t(g)}</h3> : null}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {campos
-                .filter((c) => (c.group ?? "") === g)
-                .map((c) => {
+        {/* Seções recolhidas: Acesso, Hardware, Sistema e Outros (abre ao tocar no nome). */}
+        {grupos.map((g) => {
+          const doGrupo = campos.filter((c) => (c.group ?? "Outros") === g);
+          const preenchidos = doGrupo.filter((c) =>
+            c.kind === "secret" ? saved.has(c.key) || Boolean(form.senhas[c.key]) : c.kind === "toggle" ? form.specs[c.key] === true : Boolean(form.specs[c.key]),
+          ).length;
+          return (
+            <CollapsibleSection
+              key={`${form.tipo}-${g}`}
+              title={t(g)}
+              enabled={false}
+              alwaysOn
+              summary={preenchidos ? t("{n} preenchidos", { n: preenchidos }) : t("Nada preenchido")}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                {doGrupo.map((c) => {
                   const id = `eq-${c.key}`;
                   const v = form.specs[c.key];
                   if (c.kind === "toggle") {
@@ -182,38 +201,29 @@ export function EquipamentoModal({
                     </div>
                   );
                 })}
-            </div>
-          </section>
-        ))}
+              </div>
+            </CollapsibleSection>
+          );
+        })}
 
-        <section className="grid gap-3">
-          <h3 className="text-sm font-semibold">{t("Estado geral")}</h3>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(ESTADO_LABEL) as Enums<"equipamento_estado">[]).map((estado) => (
-              <button
-                key={estado}
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, estado_geral: f.estado_geral === estado ? "" : estado }))}
-                className={cn(
-                  "h-9 rounded-full border px-3.5 text-[13px] font-medium",
-                  form.estado_geral === estado
-                    ? "border-brand-700 bg-brand-100 text-brand-ink"
-                    : "border-border text-ink-muted hover:bg-surface-muted",
-                )}
-              >
-                {t(ESTADO_LABEL[estado])}
-              </button>
-            ))}
-          </div>
-          {form.estado_geral ? (
-            <Textarea
-              aria-label={t("Detalhes do estado")}
-              placeholder={t("Detalhes: o que está funcionando, qual o defeito, desde quando")}
-              value={form.estado_detalhe}
-              onChange={(e) => setForm((f) => ({ ...f, estado_detalhe: e.target.value }))}
-            />
-          ) : null}
-        </section>
+        {/* Estado geral: liga a seção e descreve sintomas, defeitos e solução. */}
+        <CollapsibleSection
+          title={t("Estado geral")}
+          enabled={form.specs[ESTADO_ATIVO] === true}
+          onEnabledChange={(on) => setSpec(ESTADO_ATIVO, on)}
+          summary={form.specs[ESTADO_ATIVO] === true ? undefined : t("Desligado")}
+        >
+          {ESTADO_CAMPOS.map((c) => (
+            <Field key={c.key} label={t(c.label)} htmlFor={`eq-${c.key}`}>
+              <Textarea
+                id={`eq-${c.key}`}
+                placeholder={t(c.placeholder)}
+                value={typeof form.specs[c.key] === "string" ? (form.specs[c.key] as string) : ""}
+                onChange={(e) => setSpec(c.key, e.target.value)}
+              />
+            </Field>
+          ))}
+        </CollapsibleSection>
 
         {error ? <Feedback kind="error">{error}</Feedback> : null}
       </div>

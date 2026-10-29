@@ -6,11 +6,10 @@ import { Pencil } from "lucide-react";
 import { EquipamentoModal } from "@/components/clientes/equipamento-modal";
 import { SecretValue } from "@/components/clientes/secret-field";
 import { Button } from "@/components/ui/button";
-import { Tag } from "@/components/ui/status-badge";
 import { useI18n } from "@/i18n/client";
-import { asSpecs, CAMPOS, secretKeys } from "@/lib/equipamentos";
+import { asSpecs, CAMPOS, ESTADO_ATIVO, ESTADO_CAMPOS, GRUPOS, secretKeys } from "@/lib/equipamentos";
 import { docNumber } from "@/lib/format";
-import { EQUIPAMENTO_LABEL, ESTADO_LABEL } from "@/lib/labels";
+import { EQUIPAMENTO_LABEL } from "@/lib/labels";
 import { carregarEquipamento, type EquipamentoDetalhe } from "./actions";
 import { LinhaLista, listaClass, Secao, vazioClass, ViewShell } from "./parts";
 import type { ViewProps } from "./viewer";
@@ -61,7 +60,9 @@ export function EquipamentoView({ id, onClose, onBack, abrir }: ViewProps) {
         c.kind === "secret" ? secrets.has(c.key) : c.kind === "toggle" ? specs[c.key] === true : Boolean(specs[c.key]),
       )
     : [];
-  const grupos = [...new Set(campos.map((c) => c.group ?? ""))];
+  const grupos = GRUPOS.filter((g) => campos.some((c) => (c.group ?? "Outros") === g));
+  const estado = ESTADO_CAMPOS.filter((c) => typeof specs[c.key] === "string" && specs[c.key]);
+  const estadoAntigo = !estado.length && e?.estado_detalhe ? e.estado_detalhe : null;
 
   return (
     <ViewShell
@@ -96,21 +97,34 @@ export function EquipamentoView({ id, onClose, onBack, abrir }: ViewProps) {
             </div>
           ) : null}
 
-          {e.estado_geral ? (
-            <p className="text-[13px]">
-              <Tag>{t(ESTADO_LABEL[e.estado_geral])}</Tag>
-              {e.estado_detalhe ? <span className="ml-2 text-ink-muted">{e.estado_detalhe}</span> : null}
-            </p>
+          {(specs[ESTADO_ATIVO] === true && estado.length) || estadoAntigo ? (
+            <Secao titulo={t("Estado geral")}>
+              <dl className="grid gap-2 rounded-lg bg-surface-muted p-3 text-[13px]">
+                {estadoAntigo ? (
+                  <div>
+                    <dt className="text-ink-subtle">{t("Sintomas")}</dt>
+                    <dd className="whitespace-pre-wrap">{estadoAntigo}</dd>
+                  </div>
+                ) : (
+                  estado.map((c) => (
+                    <div key={c.key}>
+                      <dt className="text-ink-subtle">{t(c.label)}</dt>
+                      <dd className="whitespace-pre-wrap">{String(specs[c.key])}</dd>
+                    </div>
+                  ))
+                )}
+              </dl>
+            </Secao>
           ) : null}
 
           {campos.length === 0 ? (
             <p className={vazioClass}>{t("Nenhum detalhe preenchido.")}</p>
           ) : (
             grupos.map((g) => (
-              <Secao key={g} titulo={g ? t(g) : t("Detalhes")}>
+              <Secao key={g} titulo={t(g)}>
                 <dl className="grid grid-cols-[minmax(0,160px)_1fr] gap-x-3 gap-y-1.5 rounded-lg bg-surface-muted p-3 text-[13px]">
                   {campos
-                    .filter((c) => (c.group ?? "") === g)
+                    .filter((c) => (c.group ?? "Outros") === g)
                     .map((c) => (
                       <div key={c.key} className="contents">
                         <dt className="text-ink-subtle">{t(c.label)}</dt>

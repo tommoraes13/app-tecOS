@@ -143,7 +143,7 @@ export function ServicosList({
       {recentes.length > 0 ? (
         <section className="mb-6">
           <h2 className="mb-3 text-[15px] font-semibold">{t("Mais recentes")}</h2>
-          <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0">
+          <div className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0">
             {recentes.map((o) => (
               <button
                 key={o.id}

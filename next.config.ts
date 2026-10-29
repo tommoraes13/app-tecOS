@@ -6,7 +6,7 @@ const dev = process.env.NODE_ENV !== "production";
 
 /**
  * Política de conteúdo: o navegador só carrega scripts, estilos e imagens do próprio app,
- * do Supabase (dados e fotos) e do ViaCEP (busca de endereço). Ninguém pode exibir o app dentro de outro site.
+ * do Supabase (dados e fotos), do ViaCEP e do Photon/OpenStreetMap (busca de endereço). Ninguém pode exibir o app dentro de outro site.
  */
 const csp = [
   "default-src 'self'",
@@ -14,7 +14,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${supabase}`.trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${supabase} ${supabaseWs} https://viacep.com.br`.trim(),
+  `connect-src 'self' ${supabase} ${supabaseWs} https://viacep.com.br https://photon.komoot.io`.trim(),
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

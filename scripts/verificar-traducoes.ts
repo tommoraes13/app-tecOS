@@ -9,7 +9,7 @@ import es from "../src/i18n/messages/es";
 import { mainNav, secondaryNav } from "../src/components/layout/nav-items";
 import { PERIODOS } from "../src/lib/dashboard";
 import { STATUS_OPCOES } from "../src/lib/documento";
-import { CAMPOS, NOME_PLACEHOLDER, PROVEDORES, SUBTIPOS_REDE } from "../src/lib/equipamentos";
+import { CAMPOS, ESTADO_CAMPOS, GRUPOS, NOME_PLACEHOLDER, PROVEDORES, SUBTIPOS_REDE } from "../src/lib/equipamentos";
 import { CANAL_LABEL, CATEGORIA_LABEL, EQUIPAMENTO_CURTO, EQUIPAMENTO_LABEL, ESTADO_LABEL } from "../src/lib/labels";
 import { OS_STATUS } from "../src/lib/status";
 
@@ -22,7 +22,11 @@ const add = (k: string, onde: string) => {
 for (const rec of [CANAL_LABEL, CATEGORIA_LABEL, EQUIPAMENTO_CURTO, EQUIPAMENTO_LABEL, ESTADO_LABEL, NOME_PLACEHOLDER]) {
   for (const v of Object.values(rec)) add(v, "labels");
 }
-for (const v of [...PROVEDORES, ...SUBTIPOS_REDE]) add(v, "equipamentos");
+for (const v of [...PROVEDORES, ...SUBTIPOS_REDE, ...GRUPOS]) add(v, "equipamentos");
+for (const c of ESTADO_CAMPOS) {
+  add(c.label, "equipamentos");
+  add(c.placeholder, "equipamentos");
+}
 for (const campos of Object.values(CAMPOS)) {
   for (const c of campos) {
     add(c.label, "equipamentos");

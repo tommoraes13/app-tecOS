@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NextResponse, type NextRequest } from "next/server";
 import { getI18n } from "@/i18n/server";
+import { avatarUrl } from "@/lib/avatar";
 import { docNumber } from "@/lib/format";
 import { carregarPdf } from "@/lib/pdf/dados";
 import { DocumentoPDF } from "@/lib/pdf/documento-pdf";
@@ -24,7 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!dados) return new NextResponse(t("Documento não encontrado."), { status: 404 });
 
   const geradoEm = t("{data} às {hora}", { data: fmt.date(fmt.today()), hora: fmt.time(new Date()) });
-  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt });
+  const logo = await baixarLogo(dados.negocio?.logo_url ?? null);
+  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt, logo });
   const buffer = await renderToBuffer(element as unknown as Parameters<typeof renderToBuffer>[0]);
 
   const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(dados.numero)}.pdf`;
@@ -36,4 +38,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       "Cache-Control": "private, no-store",
     },
   });
+}
+
+/** Baixa o logotipo do negócio para o PDF. Se falhar ou demorar, o PDF sai sem ele. */
+async function baixarLogo(path: string | null): Promise<{ data: Buffer; format: "png" | "jpg" } | null> {
+  const url = avatarUrl(path);
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    const tipo = res.headers.get("content-type") ?? "";
+    const format = tipo.includes("png") ? "png" : tipo.includes("jpeg") || tipo.includes("jpg") ? "jpg" : null;
+    if (!format) return null;
+    return { data: Buffer.from(await res.arrayBuffer()), format };
+  } catch {
+    return null;
+  }
 }

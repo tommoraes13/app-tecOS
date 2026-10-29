@@ -1,4 +1,4 @@
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { OS_STATUS } from "@/lib/status";
 import { DEFAULT_PREFS } from "@/i18n/config";
 import { createFormat, type Fmt } from "@/i18n/format";
@@ -21,6 +21,8 @@ const s = StyleSheet.create({
   page: { paddingTop: 32, paddingBottom: 48, paddingHorizontal: 40, fontSize: 9.5, color: C.ink, fontFamily: "Helvetica", lineHeight: 1.35 },
   header: { flexDirection: "row", justifyContent: "space-between", paddingBottom: 12, borderBottomWidth: 2, borderBottomColor: C.brand, marginBottom: 14 },
   empresa: { maxWidth: 300 },
+  empresaLinha: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  logo: { width: 56, height: 56, objectFit: "contain" },
   empresaNome: { fontSize: 15, fontFamily: "Helvetica-Bold", marginBottom: 3 },
   small: { fontSize: 8.5, color: C.muted },
   docBox: { alignItems: "flex-end" },
@@ -108,11 +110,14 @@ export function DocumentoPDF({
   geradoEm,
   t = createT(null),
   fmt = createFormat(DEFAULT_PREFS),
+  logo = null,
 }: {
   d: PdfDados;
   geradoEm: string;
   t?: T;
   fmt?: Fmt;
+  /** Logotipo do negócio já baixado (PNG ou JPG). */
+  logo?: { data: Buffer; format: "png" | "jpg" } | null;
 }) {
   const { money, date } = fmt;
   const isOS = d.tipo === "os";
@@ -131,12 +136,15 @@ export function DocumentoPDF({
           {`${numero} · ${t("gerado em {quando}", { quando: geradoEm })}`}
         </Text>
         <View style={s.header}>
+          <View style={s.empresaLinha}>
+          {logo ? <Image src={logo} style={s.logo} /> : null}
           <View style={s.empresa}>
             <Text style={s.empresaNome}>{nomeEmpresa}</Text>
             {n?.razao_social && n.razao_social !== nomeEmpresa ? <Text style={s.small}>{n.razao_social}</Text> : null}
             {n?.cpf_cnpj ? <Text style={s.small}>{doc(n.cpf_cnpj)}</Text> : null}
             <Text style={s.small}>{[n?.telefone ? phone(n.telefone) : null, n?.email].filter(Boolean).join("  ·  ")}</Text>
             {n ? <Text style={s.small}>{enderecoLinha(n, t)}</Text> : null}
+          </View>
           </View>
           <View style={s.docBox}>
             <Text style={s.docTipo}>{titulo}</Text>
