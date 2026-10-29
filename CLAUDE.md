@@ -9,7 +9,7 @@
 
 ## Produto
 
-Sistema para técnicos de informática autônomos. 1 login = 1 técnico = 1 negócio. Telas: Dashboard, Minha Agenda, Orçamentos, Atendimentos (antiga Serviços Prestados, rota /servicos), Clientes, Cadastros (Serviços, Produtos, Templates), Precificação, Meu Negócio, Minha Conta, Meu Plano.
+Sistema para técnicos de informática autônomos. 1 login = 1 técnico = 1 negócio. Menu, nesta ordem: Dashboard, Atendimentos (rota /servicos), Minha Agenda, Clientes, Orçamentos, Meu Catálogo (Serviços, Produtos, Modelos; rotas /cadastros/*), Tabela de Preços (rota /precificacao), Meu Negócio. Fora do menu: Minha Conta, Meu Plano.
 
 Regras fechadas na Fase 1:
 - Status da OS: Em andamento (padrão), Pendente, Aguardando Pagamento, Finalizado, Retorno. Pendente e Retorno são manuais.
@@ -18,7 +18,8 @@ Regras fechadas na Fase 1:
 - Numeração de OS e de orçamento: 5 dígitos, por técnico, editável e sem repetir.
 - Senhas dos equipamentos: criptografadas no servidor (AES-256) com `EQUIPMENT_SECRET_KEY`; mascaradas com botões mostrar/copiar.
 - CEP preenche o endereço pelo ViaCEP. Distância é manual nesta versão.
-- PDF: só OS e orçamento por enquanto.
+- PDF: só OS e orçamento por enquanto, com o logotipo do negócio (Meu Negócio) no topo.
+- OS/orçamento: rascunho no aparelho até o 1º Salvar; depois salva sozinho ~4 s após cada mudança.
 - Status Finalizado conta como recebido (data de hoje), pela tela e por gatilho no banco.
 - Categorias de serviço: Manutenção, Diagnóstico/Revisão, Montagem, Configuração, Backup e Recuperação, Consultoria, Outros.
 - Idiomas: pt-BR (padrão), en, es. O texto em português é a chave de t(); traduções em src/i18n/messages.
@@ -28,6 +29,7 @@ Regras fechadas na Fase 1:
 - Tokens em `src/app/globals.css` (`:root` e `.dark`), expostos como classes: `bg-surface`, `text-ink-muted`, `border-border-control`, `bg-brand-gradient`…
 - Botão com degradê (`variant="cta"`) no máximo um por tela. Formulários concluem com `variant="dark"`.
 - Seções de formulário começam fechadas e abrem com switch. Criar = modal centralizado; ver detalhes = janela central só de leitura (useViewer) com botão Editar.
+- Degradê da marca (botão cta, card de destaque, ícone): azul (`--cta-from/via/to`). O resto da identidade continua verde.
 - Cores de apoio além do verde: status da OS e categorias de serviço têm cor própria; valores recebidos em verde, a receber em amarelo, desconto em vermelho.
 - Valores (constantes) usados no servidor não podem vir de arquivos "use client".
 - Celular: menu hambúrguer, controles com 44px de altura, modais em tela cheia, tabelas viram lista de cards.
