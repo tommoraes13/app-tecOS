@@ -46,7 +46,6 @@ export async function salvarCliente(input: ClienteInput): Promise<ActionResult<T
       ? await supabase.from("base_clientes").update(row).eq("id", input.id).select("*").single()
       : await supabase.from("base_clientes").insert(row).select("*").single();
     if (error || !data) return fail(error);
-    revalidatePath("/clientes");
     return { ok: true, data };
   } catch (e) {
     return fail(e);
@@ -145,7 +144,6 @@ export async function salvarEquipamento(input: EquipamentoInput): Promise<Action
       ? await supabase.from("base_equipamentos").update(row).eq("id", input.id).select("*").single()
       : await supabase.from("base_equipamentos").insert(row).select("*").single();
     if (error || !data) return fail(error);
-    revalidatePath("/clientes");
     // O texto cifrado não precisa ir para o navegador.
     return { ok: true, data: { ...data, senhas: Object.fromEntries(Object.keys(senhas).map((k) => [k, "•"])) } };
   } catch (e) {
@@ -158,7 +156,6 @@ export async function excluirEquipamento(id: string): Promise<ActionResult> {
     const { supabase } = await requireUser();
     const { error } = await supabase.from("base_equipamentos").delete().eq("id", id);
     if (error) return fail(error, "Não foi possível excluir agora.");
-    revalidatePath("/clientes");
     return { ok: true, data: null };
   } catch (e) {
     return fail(e);

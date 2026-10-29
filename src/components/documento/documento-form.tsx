@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Plus, Trash2 } from "lucide-react";
-import { finalizarAtendimento, salvarAtendimento } from "@/app/(app)/servicos/actions";
+import { finalizarAtendimento, salvarAtendimento, vincularEquipamento } from "@/app/(app)/servicos/actions";
 import { salvarOrcamento, transformarEmAtendimento } from "@/app/(app)/orcamentos/actions";
 import { ClienteModal } from "@/components/clientes/cliente-modal";
 import { EquipamentoModal } from "@/components/clientes/equipamento-modal";
@@ -32,6 +32,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { ItemList } from "./item-list";
 import { PdfActions } from "./pdf-actions";
+import { WhatsappButton } from "./whatsapp-button";
 
 type Equipamento = Tables<"base_equipamentos">;
 type Mode = "os" | "orcamento";
@@ -68,7 +69,9 @@ export function DocumentoForm({
   const [pending, start] = useTransition();
   const [feedback, setFeedback] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
-  useEffect(() => setForm(initial), [initial]);
+  // Importante: o formulário NÃO volta para `initial` quando a página recarrega dados do servidor;
+  // senão o que foi preenchido (cliente novo, equipamento novo) se perde.
+  const [descontoAtivo, setDescontoAtivo] = useState(initial.desconto_valor > 0);
 
   /** Aplica uma mudança e mantém a duração da 1ª visita acompanhando a sugestão. */
   const update = useCallback(
@@ -159,7 +162,8 @@ export function DocumentoForm({
   const acoes = (
     <div className="grid gap-2">
       {feedback ? <Feedback kind={feedback.kind}>{feedback.text}</Feedback> : null}
-      {form.id ? <PdfActions tipo={mode} id={form.id} numero={form.numero} className="mb-1" /> : null}
+      {form.id ? <PdfActions tipo={mode} id={form.id} numero={form.numero} /> : null}
+      {form.id ? <WhatsappButton tipo={mode} id={form.id} className="mb-1" /> : null}
       {isOS ? (
         <>
           {!finalizado ? (
@@ -571,21 +575,83 @@ export function DocumentoForm({
             title="Despesas"
             enabled={form.despesas_ativas}
             onEnabledChange={(v) => set({ despesas_ativas: v })}
-            summary={form.despesas_ativas ? money(t.despesas) : "Sem despesas"}
+            summary={
+              form.despesas_ativas
+                ? [t.frete ? `Frete ${money(t.frete)}` : null, t.interno ? `Internas ${money(t.interno)}` : null]
+                    .filter(Boolean)
+                    .join(" · ") || "Nenhum valor"
+                : "Sem despesas"
+            }
           >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Deslocamento" htmlFor="dsp-desl">
-                <MoneyInput id="dsp-desl" value={form.despesa_deslocamento} onChange={(v) => set({ despesa_deslocamento: v })} />
-              </Field>
-              <Field label="Alimentação" htmlFor="dsp-alim">
-                <MoneyInput id="dsp-alim" value={form.despesa_alimentacao} onChange={(v) => set({ despesa_alimentacao: v })} />
-              </Field>
-              <Field label="Insumos" htmlFor="dsp-ins">
-                <MoneyInput id="dsp-ins" value={form.despesa_insumos} onChange={(v) => set({ despesa_insumos: v })} />
-              </Field>
-              <Field label="Outros" htmlFor="dsp-out">
-                <MoneyInput id="dsp-out" value={form.despesa_outros} onChange={(v) => set({ despesa_outros: v })} />
-              </Field>
+            <Field label="Frete" htmlFor="dsp-frete" hint="Cobrado do cliente: entra no total e aparece no PDF">
+              <MoneyInput id="dsp-frete" value={form.despesa_frete} onChange={(v) => set({ despesa_frete: v })} />
+            </Field>
+            <div className="rounded-lg bg-surface-muted p-3">
+              <p className="mb-3 text-xs text-ink-subtle">
+                Custos internos: ficam só no seu controle financeiro. Não entram no total cobrado nem aparecem para o cliente.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Deslocamento" htmlFor="dsp-desl">
+                  <MoneyInput id="dsp-desl" value={form.despesa_deslocamento} onChange={(v) => set({ despesa_deslocamento: v })} />
+                </Field>
+                <Field label="Alimentação" htmlFor="dsp-alim">
+                  <MoneyInput id="dsp-alim" value={form.despesa_alimentacao} onChange={(v) => set({ despesa_alimentacao: v })} />
+                </Field>
+                <Field label="Insumos" htmlFor="dsp-ins">
+                  <MoneyInput id="dsp-ins" value={form.despesa_insumos} onChange={(v) => set({ despesa_insumos: v })} />
+                </Field>
+                <Field label="Outros" htmlFor="dsp-out">
+                  <MoneyInput id="dsp-out" value={form.despesa_outros} onChange={(v) => set({ despesa_outros: v })} />
+                </Field>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Desconto"
+            enabled={descontoAtivo}
+            onEnabledChange={(v) => {
+              setDescontoAtivo(v);
+              if (!v) set({ desconto_valor: 0 });
+            }}
+            summary={t.desconto ? `− ${money(t.desconto)}` : "Sem desconto"}
+          >
+            <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
+              <div className="inline-flex h-11 rounded-full bg-surface-muted p-1 lg:h-10" role="radiogroup" aria-label="Tipo de desconto">
+                {(["valor", "percentual"] as const).map((tipo) => (
+                  <button
+                    key={tipo}
+                    type="button"
+                    role="radio"
+                    aria-checked={form.desconto_tipo === tipo}
+                    onClick={() => set({ desconto_tipo: tipo, desconto_valor: 0 })}
+                    className={cn(
+                      "rounded-full px-4 text-sm font-medium",
+                      form.desconto_tipo === tipo ? "bg-surface text-ink shadow-card" : "text-ink-muted",
+                    )}
+                  >
+                    {tipo === "valor" ? "R$" : "%"}
+                  </button>
+                ))}
+              </div>
+              {form.desconto_tipo === "valor" ? (
+                <Field label="Valor do desconto" htmlFor="desc-valor">
+                  <MoneyInput id="desc-valor" value={form.desconto_valor} onChange={(v) => set({ desconto_valor: v })} />
+                </Field>
+              ) : (
+                <Field label="Porcentagem" htmlFor="desc-pct" hint={t.desconto ? `Equivale a ${money(t.desconto)}` : undefined}>
+                  <Input
+                    id="desc-pct"
+                    inputMode="decimal"
+                    value={form.desconto_valor ? String(form.desconto_valor).replace(".", ",") : ""}
+                    placeholder="Exemplo: 10"
+                    onChange={(e) => {
+                      const n = Number(e.target.value.replace(",", ".").replace(/[^\d.]/g, ""));
+                      set({ desconto_valor: Number.isFinite(n) ? Math.min(100, n) : 0 });
+                    }}
+                  />
+                </Field>
+              )}
             </div>
           </CollapsibleSection>
 
@@ -622,7 +688,23 @@ export function DocumentoForm({
             </CollapsibleSection>
           ) : null}
 
-          <Card className="p-5">
+          <Card className="grid gap-4 p-5">
+            <Field label="Garantia" htmlFor="doc-garantia" hint={isOS ? "Conta a partir da data da entrega" : "Vale a partir da entrega do serviço"}>
+              <Select
+                id="doc-garantia"
+                className="sm:max-w-60"
+                value={form.garantia_meses ?? 0}
+                onChange={(e) => set({ garantia_meses: Number(e.target.value) || null })}
+              >
+                {[...new Set([0, 1, 2, 3, 6, 12, 18, 24, form.garantia_meses ?? 0])]
+                  .sort((a, b) => a - b)
+                  .map((m) => (
+                    <option key={m} value={m}>
+                      {m === 0 ? "Sem garantia" : m === 1 ? "1 mês" : `${m} meses`}
+                    </option>
+                  ))}
+              </Select>
+            </Field>
             <Field label="Observações" htmlFor="doc-obs" hint="Saem no PDF">
               <Textarea id="doc-obs" value={form.observacoes} onChange={(e) => set({ observacoes: e.target.value })} />
             </Field>
@@ -635,7 +717,7 @@ export function DocumentoForm({
             <h2 className="mb-1 text-sm font-semibold">Resumo</h2>
             <Linha label={`Serviços (${form.servicos_ativos ? form.servicos.length : 0})`} valor={t.servicos} apagado={form.valor_total_manual} />
             <Linha label={`Produtos (${form.produtos_ativos ? form.produtos.length : 0})`} valor={t.produtos} apagado={form.valor_total_manual} />
-            <Linha label="Despesas" valor={t.despesas} apagado={form.valor_total_manual} />
+            {t.frete ? <Linha label="Frete" valor={t.frete} apagado={form.valor_total_manual} /> : null}
             <div className="flex items-center justify-between gap-2 text-sm text-ink-muted">
               <Switch checked={form.cobrar_visita} onChange={(v) => set({ cobrar_visita: v })} label="Visita técnica" />
               <span className={cn("font-medium text-ink tabular-nums", (!form.cobrar_visita || form.valor_total_manual) && "text-ink-subtle")}>
@@ -644,6 +726,14 @@ export function DocumentoForm({
             </div>
             {form.cobrar_visita ? (
               <MoneyInput aria-label="Valor da visita" value={form.valor_visita} onChange={(v) => set({ valor_visita: v })} />
+            ) : null}
+            {t.desconto ? (
+              <div className="flex justify-between gap-2 text-sm text-ink-muted">
+                Desconto{form.desconto_tipo === "percentual" ? ` (${String(form.desconto_valor).replace(".", ",")}%)` : ""}
+                <strong className={cn("font-medium tabular-nums", form.valor_total_manual ? "text-ink-subtle" : "text-success")}>
+                  − {money(t.desconto)}
+                </strong>
+              </div>
             ) : null}
             <div className="mt-1 flex items-baseline justify-between gap-2 border-t border-border pt-3">
               <span className="font-semibold">Total</span>
@@ -657,8 +747,11 @@ export function DocumentoForm({
             {form.valor_total_manual ? (
               <>
                 <MoneyInput aria-label="Total manual" value={form.valor_total} onChange={(v) => set({ valor_total: v })} />
-                <p className="text-xs text-ink-subtle">No PDF sai só o total; itens e despesas sem valores.</p>
+                <p className="text-xs text-ink-subtle">No PDF sai só o total; os itens aparecem sem valores.</p>
               </>
+            ) : null}
+            {t.interno ? (
+              <p className="text-xs text-ink-subtle">Custos internos (não cobrados): {money(t.interno)}</p>
             ) : null}
             {isOS && form.recebido ? (
               <>
@@ -703,8 +796,16 @@ export function DocumentoForm({
           clienteId={form.cliente_id}
           onSaved={(e) => {
             setEquipModal(false);
-            setEquipamentos((list) => [...list, e]);
-            set({ equipamentos: [...form.equipamentos, e.id] });
+            setEquipAtivos(true);
+            setEquipamentos((list) => [...list.filter((x) => x.id !== e.id), e]);
+            update((f) => ({ ...f, equipamentos: f.equipamentos.includes(e.id) ? f.equipamentos : [...f.equipamentos, e.id] }));
+            // OS já salva: liga o equipamento na hora, sem precisar clicar em Salvar.
+            if (isOS && form.id) {
+              const osId = form.id;
+              void vincularEquipamento(osId, e.id).then((r) =>
+                setFeedback(r.ok ? { kind: "ok", text: `Equipamento “${e.nome}” adicionado a esta OS.` } : { kind: "error", text: r.error }),
+              );
+            }
           }}
         />
       ) : null}

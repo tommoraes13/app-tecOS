@@ -41,6 +41,10 @@ export type Database = {
           valor_total: number
           valor_total_manual: boolean
           valor_visita: number
+          desconto_tipo: string
+          desconto_valor: number
+          despesa_frete: number
+          garantia_meses: number | null
         }
         Insert: {
           cliente_id?: string | null
@@ -69,6 +73,10 @@ export type Database = {
           valor_total?: number
           valor_total_manual?: boolean
           valor_visita?: number
+          desconto_tipo?: string
+          desconto_valor?: number
+          despesa_frete?: number
+          garantia_meses?: number | null
         }
         Update: {
           cliente_id?: string | null
@@ -97,6 +105,10 @@ export type Database = {
           valor_total?: number
           valor_total_manual?: boolean
           valor_visita?: number
+          desconto_tipo?: string
+          desconto_valor?: number
+          despesa_frete?: number
+          garantia_meses?: number | null
         }
         Relationships: [
           {
@@ -242,6 +254,10 @@ export type Database = {
           valor_total: number
           valor_total_manual: boolean
           valor_visita: number
+          desconto_tipo: string
+          desconto_valor: number
+          despesa_frete: number
+          garantia_meses: number | null
         }
         Insert: {
           cliente_id?: string | null
@@ -262,6 +278,10 @@ export type Database = {
           valor_total?: number
           valor_total_manual?: boolean
           valor_visita?: number
+          desconto_tipo?: string
+          desconto_valor?: number
+          despesa_frete?: number
+          garantia_meses?: number | null
         }
         Update: {
           cliente_id?: string | null
@@ -282,6 +302,10 @@ export type Database = {
           valor_total?: number
           valor_total_manual?: boolean
           valor_visita?: number
+          desconto_tipo?: string
+          desconto_valor?: number
+          despesa_frete?: number
+          garantia_meses?: number | null
         }
         Relationships: [
           {
@@ -401,6 +425,7 @@ export type Database = {
           user_id: string
           valor_km: number
           valor_visita: number
+          garantia_meses_padrao: number
         }
         Insert: {
           bairro?: string | null
@@ -425,6 +450,7 @@ export type Database = {
           user_id: string
           valor_km?: number
           valor_visita?: number
+          garantia_meses_padrao?: number
         }
         Update: {
           bairro?: string | null
@@ -449,6 +475,7 @@ export type Database = {
           user_id?: string
           valor_km?: number
           valor_visita?: number
+          garantia_meses_padrao?: number
         }
         Relationships: []
       }
@@ -734,6 +761,39 @@ export type Database = {
             referencedColumns: ["id", "user_id"]
           },
         ]
+      }
+      perfil: {
+        Row: {
+          created_at: string
+          foto_path: string | null
+          fuso: string
+          idioma: string
+          moeda: string
+          nome_exibicao: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          foto_path?: string | null
+          fuso?: string
+          idioma?: string
+          moeda?: string
+          nome_exibicao?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          foto_path?: string | null
+          fuso?: string
+          idioma?: string
+          moeda?: string
+          nome_exibicao?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

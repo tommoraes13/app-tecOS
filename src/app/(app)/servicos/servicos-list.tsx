@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Wrench } from "lucide-react";
 import { PdfActions } from "@/components/documento/pdf-actions";
+import { WhatsappButton } from "@/components/documento/whatsapp-button";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -288,7 +289,7 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
               </Button>
               <span className="flex-1" />
               <ButtonLink href={`/servicos/${aberto.id}`} variant="dark" size="sm">
-                Abrir atendimento
+                Editar OS
               </ButtonLink>
             </>
           }
@@ -349,7 +350,10 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
             </section>
           ) : null}
 
-          <PdfActions tipo="os" id={aberto.id} numero={aberto.numero} />
+          <div className="grid gap-2">
+            <PdfActions tipo="os" id={aberto.id} numero={aberto.numero} />
+            <WhatsappButton tipo="os" id={aberto.id} />
+          </div>
 
           <Field label="Mudar status" htmlFor="dr-status">
             <Select

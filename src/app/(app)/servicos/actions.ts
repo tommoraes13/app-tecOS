@@ -36,6 +36,10 @@ export async function salvarAtendimento(f: DocForm): Promise<ActionResult<{ id: 
       despesa_alimentacao: f.despesa_alimentacao,
       despesa_insumos: f.despesa_insumos,
       despesa_outros: f.despesa_outros,
+      despesa_frete: f.despesa_frete,
+      desconto_tipo: f.desconto_tipo,
+      desconto_valor: f.desconto_valor,
+      garantia_meses: f.garantia_meses,
       valor_total: t.total,
       valor_total_manual: f.valor_total_manual,
       data_entrega: f.data_entrega || null,
@@ -163,6 +167,20 @@ export async function excluirAtendimentos(ids: string[]): Promise<ActionResult> 
     revalidatePath("/servicos");
     revalidatePath("/dashboard");
     revalidatePath("/agenda");
+    return { ok: true, data: null };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Liga um equipamento a uma OS já salva (usado ao cadastrar equipamento de dentro da OS). */
+export async function vincularEquipamento(osId: string, equipamentoId: string): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireUser();
+    const { error } = await supabase
+      .from("os_equipamentos")
+      .upsert({ os_id: osId, equipamento_id: equipamentoId }, { onConflict: "os_id,equipamento_id", ignoreDuplicates: true });
+    if (error) return fail(error, "O equipamento foi salvo, mas não foi ligado à OS. Clique em Salvar atendimento.");
     return { ok: true, data: null };
   } catch (e) {
     return fail(e);

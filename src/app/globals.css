@@ -152,6 +152,35 @@
   html {
     -webkit-text-size-adjust: 100%;
   }
+  /* Nada pode ser mais largo que a tela (evita rolagem para o lado e o "zoom" inicial no celular). */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  /* Itens de grade podem encolher; sem isso um campo comprido empurra a tela para o lado. */
+  .grid > * {
+    min-width: 0;
+  }
+  img,
+  svg {
+    max-width: 100%;
+  }
+  /* Campos de data e hora no iPhone têm largura mínima própria: forçamos a largura do campo. */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+    display: block;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.25em;
+  }
   body {
     background-color: var(--bg);
     color: var(--ink);

@@ -43,6 +43,12 @@ export type DocForm = {
   despesa_alimentacao: number;
   despesa_insumos: number;
   despesa_outros: number;
+  /** frete é cobrado do cliente e sai no PDF; as outras despesas são só controle interno */
+  despesa_frete: number;
+  desconto_tipo: "valor" | "percentual";
+  /** em reais ou em %, conforme desconto_tipo */
+  desconto_valor: number;
+  garantia_meses: number | null;
   valor_total: number;
   valor_total_manual: boolean;
   data_entrega: string;
@@ -62,22 +68,38 @@ export function somaItens(itens: ItemForm[]) {
   return round2(itens.reduce((s, i) => s + i.quantidade * i.valor_unitario, 0));
 }
 
+/**
+ * Total cobrado = serviços + produtos + visita + frete − desconto.
+ * Deslocamento, alimentação, insumos e outros são custos internos: não entram no total nem no PDF.
+ */
 export function totais(f: DocForm) {
   const servicos = f.servicos_ativos ? somaItens(f.servicos) : 0;
   const produtos = f.produtos_ativos ? somaItens(f.produtos) : 0;
-  const despesas = f.despesas_ativas
+  const frete = f.despesas_ativas ? round2(f.despesa_frete) : 0;
+  const interno = f.despesas_ativas
     ? round2(f.despesa_deslocamento + f.despesa_alimentacao + f.despesa_insumos + f.despesa_outros)
     : 0;
   const visita = f.cobrar_visita ? f.valor_visita : 0;
-  const calculado = round2(servicos + produtos + despesas + visita);
+  const subtotal = round2(servicos + produtos + visita + frete);
+  const desconto = descontoEmReais(subtotal, f.desconto_tipo, f.desconto_valor);
+  const calculado = round2(subtotal - desconto);
   return {
     servicos,
     produtos,
-    despesas,
+    frete,
+    interno,
     visita,
+    subtotal,
+    desconto,
     calculado,
     total: f.valor_total_manual ? f.valor_total : calculado,
   };
+}
+
+export function descontoEmReais(subtotal: number, tipo: string, valor: number) {
+  if (!valor || valor <= 0) return 0;
+  const d = tipo === "percentual" ? (subtotal * Math.min(valor, 100)) / 100 : valor;
+  return round2(Math.min(d, subtotal));
 }
 
 /** Duração sugerida: visita padrão + tempo médio dos serviços × quantidade, arredondada para 30 min. */
@@ -101,4 +123,9 @@ export const STATUS_OPCOES: { value: Enums<"os_status">; label: string }[] = [
 export type ClienteOpcao = { id: string; nome: string; telefone: string; bairro: string | null; cidade: string | null };
 export type CatalogoServico = { id: string; nome: string; codigo: string | null; valor: number; tempo_medio_min: number | null };
 export type CatalogoProduto = { id: string; nome: string; codigo: string | null; valor_venda: number };
-export type Padroes = { valor_visita: number; duracao_visita_min: number; cobrar_visita: boolean };
+export type Padroes = {
+  valor_visita: number;
+  duracao_visita_min: number;
+  cobrar_visita: boolean;
+  garantia_meses: number;
+};

@@ -20,14 +20,14 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-col gap-3.5 rounded-xl p-5",
+        "flex min-w-0 flex-col gap-3 rounded-xl p-4 sm:gap-3.5 sm:p-5",
         featured ? "bg-brand-gradient text-on-brand shadow-cta" : "bg-surface shadow-card",
       )}
     >
       <span className={cn("text-[13px] leading-[18px]", featured ? "text-on-brand-muted" : "text-ink-muted")}>
         {label}
       </span>
-      <div className="flex flex-wrap items-center gap-2.5 text-[28px] leading-8 font-semibold tracking-[-0.02em] tabular-nums">
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[22px] leading-7 font-semibold tracking-[-0.02em] tabular-nums sm:text-[28px] sm:leading-8">
         {value}
         {delta ? (
           <span

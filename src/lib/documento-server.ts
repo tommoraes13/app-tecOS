@@ -19,13 +19,14 @@ export async function carregarApoio(supabase: Client) {
     supabase.from("base_clientes").select("id, nome, telefone, bairro, cidade").order("nome"),
     supabase.from("cadastro_servicos").select("id, nome, codigo, valor, tempo_medio_min").eq("ativo", true).order("nome"),
     supabase.from("cadastro_produtos").select("id, nome, codigo, valor_venda").eq("ativo", true).order("nome"),
-    supabase.from("meu_negocio").select("valor_visita, duracao_visita_min, cobrar_visita").maybeSingle(),
+    supabase.from("meu_negocio").select("valor_visita, duracao_visita_min, cobrar_visita, garantia_meses_padrao").maybeSingle(),
     supabase.from("numeracao").select("proxima_os, proximo_orcamento").maybeSingle(),
   ]);
   const padroes: Padroes = {
     valor_visita: mn.data?.valor_visita ?? 0,
     duracao_visita_min: mn.data?.duracao_visita_min ?? 60,
     cobrar_visita: mn.data?.cobrar_visita ?? false,
+    garantia_meses: mn.data?.garantia_meses_padrao ?? 3,
   };
   return {
     clientes: (cl.data ?? []) as ClienteOpcao[],
@@ -58,6 +59,10 @@ export function formularioVazio(numero: number, padroes: Padroes, clienteId: str
     despesa_alimentacao: 0,
     despesa_insumos: 0,
     despesa_outros: 0,
+    despesa_frete: 0,
+    desconto_tipo: "valor",
+    desconto_valor: 0,
+    garantia_meses: padroes.garantia_meses,
     valor_total: 0,
     valor_total_manual: false,
     data_entrega: "",
@@ -135,6 +140,10 @@ export async function carregarAtendimento(supabase: Client, id: string, servicos
     despesa_alimentacao: os.despesa_alimentacao,
     despesa_insumos: os.despesa_insumos,
     despesa_outros: os.despesa_outros,
+    despesa_frete: os.despesa_frete,
+    desconto_tipo: os.desconto_tipo === "percentual" ? "percentual" : "valor",
+    desconto_valor: os.desconto_valor,
+    garantia_meses: os.garantia_meses,
     valor_total: os.valor_total,
     valor_total_manual: os.valor_total_manual,
     data_entrega: os.data_entrega ?? "",
@@ -153,7 +162,7 @@ export async function carregarOrcamento(
   supabase: Client,
   id: string,
   servicos: CatalogoServico[] = [],
-  padroes: Padroes = { valor_visita: 0, duracao_visita_min: 60, cobrar_visita: false },
+  padroes: Padroes = { valor_visita: 0, duracao_visita_min: 60, cobrar_visita: false, garantia_meses: 3 },
 ) {
   const { data: orc } = await supabase.from("base_orcamentos").select("*").eq("id", id).maybeSingle();
   if (!orc) return null;
@@ -182,6 +191,10 @@ export async function carregarOrcamento(
     despesa_alimentacao: orc.despesa_alimentacao,
     despesa_insumos: orc.despesa_insumos,
     despesa_outros: orc.despesa_outros,
+    despesa_frete: orc.despesa_frete,
+    desconto_tipo: orc.desconto_tipo === "percentual" ? "percentual" : "valor",
+    desconto_valor: orc.desconto_valor,
+    garantia_meses: orc.garantia_meses,
     valor_total: orc.valor_total,
     valor_total_manual: orc.valor_total_manual,
     observacoes: orc.observacoes ?? "",

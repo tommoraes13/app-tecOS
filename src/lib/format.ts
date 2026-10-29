@@ -94,3 +94,12 @@ export function normalize(v: string | null | undefined) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 }
+
+/** Soma meses a uma data "AAAA-MM-DD" (31/01 + 1 mês = 28 ou 29/02). */
+export function addMonthsISO(iso: string, months: number) {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const target = new Date(Date.UTC(y, m - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(d, lastDay));
+  return target.toISOString().slice(0, 10);
+}

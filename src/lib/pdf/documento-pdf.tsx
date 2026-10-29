@@ -1,6 +1,6 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { OS_STATUS } from "@/components/ui/status-badge";
-import { cep, date, docNumber, duration, money, phone } from "@/lib/format";
+import { addMonthsISO, cep, date, docNumber, duration, money, phone } from "@/lib/format";
 import type { PdfDados, PdfItem } from "./dados";
 
 // Cores do Design System (tema claro).
@@ -178,18 +178,6 @@ export function DocumentoPDF({ d, geradoEm }: { d: PdfDados; geradoEm: string })
         <Tabela titulo="Serviços" itens={d.servicos} semValores={semValores} />
         <Tabela titulo="Produtos" itens={d.produtos} semValores={semValores} />
 
-        {!semValores && d.despesas.length > 0 ? (
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>DESPESAS</Text>
-            {d.despesas.map((x) => (
-              <View key={x.label} style={[s.row, { justifyContent: "space-between", maxWidth: 260 }]}>
-                <Text>{x.label}</Text>
-                <Text>{money(x.valor)}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-
         <View style={s.totais} wrap={false}>
           {!semValores ? (
             <>
@@ -205,16 +193,24 @@ export function DocumentoPDF({ d, geradoEm }: { d: PdfDados; geradoEm: string })
                   <Text>{money(somaProdutos)}</Text>
                 </View>
               ) : null}
-              {d.despesas.length > 0 ? (
-                <View style={s.totLinha}>
-                  <Text style={s.small}>Despesas</Text>
-                  <Text>{money(d.despesas.reduce((a, x) => a + x.valor, 0))}</Text>
-                </View>
-              ) : null}
               {d.visita !== null ? (
                 <View style={s.totLinha}>
                   <Text style={s.small}>Visita técnica</Text>
                   <Text>{money(d.visita)}</Text>
+                </View>
+              ) : null}
+              {d.frete > 0 ? (
+                <View style={s.totLinha}>
+                  <Text style={s.small}>Frete</Text>
+                  <Text>{money(d.frete)}</Text>
+                </View>
+              ) : null}
+              {d.desconto > 0 ? (
+                <View style={s.totLinha}>
+                  <Text style={s.small}>
+                    Desconto{d.descontoPct ? ` (${String(d.descontoPct).replace(".", ",")}%)` : ""}
+                  </Text>
+                  <Text>- {money(d.desconto)}</Text>
                 </View>
               ) : null}
             </>
@@ -231,8 +227,21 @@ export function DocumentoPDF({ d, geradoEm }: { d: PdfDados; geradoEm: string })
           ) : null}
         </View>
 
+        {d.garantiaMeses ? (
+          <View style={[s.section, { marginTop: 14 }]} wrap={false}>
+            <Text style={s.sectionTitle}>GARANTIA</Text>
+            <Text>
+              {`${d.garantiaMeses} ${d.garantiaMeses === 1 ? "mês" : "meses"}${
+                isOS && d.dataEntrega
+                  ? `, de ${date(d.dataEntrega)} até ${date(addMonthsISO(d.dataEntrega, d.garantiaMeses))}`
+                  : " a partir da entrega do serviço"
+              }.`}
+            </Text>
+          </View>
+        ) : null}
+
         {d.observacoes ? (
-          <View style={[s.section, { marginTop: 14 }]}>
+          <View style={[s.section, { marginTop: d.garantiaMeses ? 0 : 14 }]}>
             <Text style={s.sectionTitle}>OBSERVAÇÕES</Text>
             <Text>{d.observacoes}</Text>
           </View>
