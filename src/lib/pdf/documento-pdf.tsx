@@ -41,7 +41,6 @@ const s = StyleSheet.create({
   assinaturas: { flexDirection: "row", justifyContent: "space-between", marginTop: 32 },
   assinatura: { width: 220, borderTopWidth: 1, borderTopColor: C.muted, paddingTop: 4, textAlign: "center", fontSize: 8.5, color: C.muted },
   footerLeft: { position: "absolute", bottom: 24, left: 40, fontSize: 7.5, color: C.subtle },
-  footerRight: { position: "absolute", bottom: 24, right: 40, width: 120, textAlign: "right", fontSize: 7.5, color: C.subtle },
 });
 
 function enderecoLinha(e: {
@@ -114,11 +113,6 @@ export function DocumentoPDF({ d, geradoEm }: { d: PdfDados; geradoEm: string })
         <Text style={s.footerLeft} fixed>
           {`${numero} · gerado em ${geradoEm}`}
         </Text>
-        <Text
-          style={s.footerRight}
-          fixed
-          render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`}
-        />
         <View style={s.header}>
           <View style={s.empresa}>
             <Text style={s.empresaNome}>{nomeEmpresa}</Text>
