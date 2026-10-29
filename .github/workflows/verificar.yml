@@ -33,6 +33,8 @@ jobs:
             npm run build 2>&1 | tee build.log || status=1
           fi
           if [ $status -eq 0 ]; then
+            # Carrega como ESM, igual ao servidor do Next.
+            npm pkg set type=module
             npx --yes tsx@4 scripts/teste-pdf.tsx teste-os.pdf 2>&1 | tee pdf.log || status=1
           fi
           if [ $status -ne 0 ]; then
