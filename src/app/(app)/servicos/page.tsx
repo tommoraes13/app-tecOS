@@ -2,7 +2,10 @@ import type { Enums } from "@/lib/database.types";
 import { pageTitle } from "@/i18n/server";
 import { normalize } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import { POR_PAGINA, ServicosList, type Filtros, type OsLinha } from "./servicos-list";
+import { ServicosList, type Filtros, type OsLinha } from "./servicos-list";
+
+/** Quantas OS aparecem por página (precisa ficar aqui: valores de arquivos "use client" não chegam ao servidor). */
+const POR_PAGINA = 10;
 
 export const generateMetadata = pageTitle("Serviços Prestados");
 
@@ -96,6 +99,7 @@ export default async function ServicosPage({
       pagina={pagina}
       filtros={filtros}
       algumaOs={(rec.data ?? []).length > 0}
+      porPagina={POR_PAGINA}
     />
   );
 }

@@ -17,16 +17,18 @@ type Dados = {
 };
 
 /** Sino da barra superior: visitas de hoje a depois de amanhã e pagamentos aguardando. */
-export function Notificacoes({ className }: { className: string }) {
+export function Notificacoes({ className, compact = false }: { className: string; compact?: boolean }) {
   const { t, fmt } = useI18n();
   const { abrir } = useViewer();
   const pathname = usePathname();
   const [d, setD] = useState<Dados | null>(null);
 
   const carregar = useCallback(async () => {
+    // O sino existe duas vezes (barra do computador e do celular); só a versão visível busca.
+    if (window.matchMedia("(min-width: 1024px)").matches === compact) return;
     const { data } = await createClient().rpc("notificacoes", { p_hoje: fmt.today() });
     if (data) setD(data as unknown as Dados);
-  }, [fmt]);
+  }, [fmt, compact]);
 
   // Atualiza ao trocar de tela (leve: uma consulta só).
   useEffect(() => {

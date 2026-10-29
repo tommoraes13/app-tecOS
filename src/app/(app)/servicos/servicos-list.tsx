@@ -22,9 +22,6 @@ import { docNumber } from "@/lib/format";
 import { CATEGORIA_LABEL } from "@/lib/labels";
 import { excluirAtendimentos } from "./actions";
 
-/** Quantas OS aparecem por página. */
-export const POR_PAGINA = 50;
-
 export type OsLinha = {
   id: string;
   numero: number;
@@ -41,7 +38,7 @@ export type Filtros = { aba: Aba; q: string; de: string; ate: string; cat: strin
 
 /**
  * Lista de OS. Os filtros ficam no endereço da página e a busca é feita no banco,
- * página por página (50 por vez), para continuar rápida mesmo com milhares de OS.
+ * página por página, para continuar rápida mesmo com milhares de OS.
  */
 export function ServicosList({
   linhas,
@@ -51,6 +48,7 @@ export function ServicosList({
   pagina,
   filtros,
   algumaOs,
+  porPagina,
 }: {
   linhas: OsLinha[];
   recentes: OsLinha[];
@@ -59,6 +57,7 @@ export function ServicosList({
   pagina: number;
   filtros: Filtros;
   algumaOs: boolean;
+  porPagina: number;
 }) {
   const { t, fmt } = useI18n();
   const { date, money, relativeDays } = fmt;
@@ -72,7 +71,7 @@ export function ServicosList({
   const [error, setError] = useState<string | null>(null);
 
   const somaTodos = Object.values(contagens).reduce((a, b) => a + b, 0);
-  const paginas = Math.max(1, Math.ceil(totalFiltrado / POR_PAGINA));
+  const paginas = Math.max(1, Math.ceil(totalFiltrado / porPagina));
 
   // Troca de página ou de filtro: limpa a seleção.
   useEffect(() => setSelected(new Set()), [linhas]);
@@ -287,8 +286,8 @@ export function ServicosList({
               <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-[13px] text-ink-muted">
                 <span>
                   {t("{de}–{ate} de {total}", {
-                    de: (pagina - 1) * POR_PAGINA + 1,
-                    ate: Math.min(pagina * POR_PAGINA, totalFiltrado),
+                    de: (pagina - 1) * porPagina + 1,
+                    ate: Math.min(pagina * porPagina, totalFiltrado),
                     total: totalFiltrado,
                   })}
                 </span>

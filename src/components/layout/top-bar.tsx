@@ -79,7 +79,7 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
         )}
       </Popover>
 
-      <Notificacoes className={cn(iconBtn, compact && "size-9")} />
+      <Notificacoes compact={compact} className={cn(iconBtn, compact && "size-9")} />
 
       <Popover
         label={t("Conta")}
