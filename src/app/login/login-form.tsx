@@ -59,6 +59,19 @@ export function LoginForm() {
 
   const isLogin = mode === "entrar";
 
+  async function esqueci() {
+    setError(null);
+    setNotice(null);
+    if (!email.includes("@")) return setError("Digite seu e-mail acima para receber o link de troca de senha.");
+    setLoading(true);
+    const { error } = await createClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/minha-conta`,
+    });
+    setLoading(false);
+    if (error) return setError("Não foi possível enviar agora. Tente de novo em instantes.");
+    setNotice("Enviamos um link para o seu e-mail. Ao abrir, você entra e pode trocar a senha em Minha Conta.");
+  }
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
@@ -98,6 +111,14 @@ export function LoginForm() {
       <Button type="submit" variant="dark" className="w-full" disabled={loading}>
         {loading ? "Aguarde…" : isLogin ? "Entrar" : "Criar conta"}
       </Button>
+
+      {isLogin ? (
+        <p className="text-center text-[13px]">
+          <button type="button" onClick={esqueci} className="text-ink-muted hover:text-ink hover:underline">
+            Esqueci minha senha
+          </button>
+        </p>
+      ) : null}
 
       <p className="text-center text-[13px] text-ink-muted">
         {isLogin ? "Ainda não tem conta? " : "Já tem conta? "}
