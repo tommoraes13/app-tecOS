@@ -14,6 +14,6 @@ export async function GET() {
     return new Response(`OK ${buf.length} bytes`, { headers: { "Content-Type": "text/plain" } });
   } catch (e) {
     const err = e as Error;
-    return new Response(`ERRO: ${err?.name}: ${err?.message}\n${err?.stack ?? ""}`, { status: 500, headers: { "Content-Type": "text/plain" } });
+    return new Response(`ERRO: ${err?.name}: ${err?.message}\n${err?.stack ?? ""}`, { status: 200, headers: { "Content-Type": "text/plain" } });
   }
 }
