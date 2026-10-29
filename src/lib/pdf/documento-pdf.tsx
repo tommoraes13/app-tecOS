@@ -22,7 +22,7 @@ const s = StyleSheet.create({
   small: { fontSize: 8.5, color: C.muted },
   docBox: { alignItems: "flex-end" },
   docTipo: { fontSize: 8.5, color: C.subtle, letterSpacing: 1 },
-  docNum: { fontSize: 18, fontFamily: "Helvetica-Bold", color: C.brand, marginTop: 2 },
+  docNum: { fontSize: 18, lineHeight: 1.1, fontFamily: "Helvetica-Bold", color: C.brand, marginTop: 3, marginBottom: 4 },
   sectionTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.subtle, letterSpacing: 0.8, marginBottom: 5 },
   section: { marginBottom: 14 },
   box: { backgroundColor: C.surfaceMuted, borderRadius: 6, padding: 10 },
@@ -36,11 +36,12 @@ const s = StyleSheet.create({
   cVal: { width: 72, textAlign: "right" },
   totais: { marginLeft: "auto", width: 230, marginTop: 6 },
   totLinha: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2.5 },
-  totFinal: { flexDirection: "row", justifyContent: "space-between", marginTop: 6, paddingTop: 8, borderTopWidth: 1.5, borderTopColor: C.brand },
-  totFinalValor: { fontSize: 15, fontFamily: "Helvetica-Bold", color: C.brand },
-  assinaturas: { flexDirection: "row", justifyContent: "space-between", marginTop: 40 },
+  totFinal: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 6, marginBottom: 4, paddingTop: 8, borderTopWidth: 1.5, borderTopColor: C.brand },
+  totFinalValor: { fontSize: 15, lineHeight: 1.1, fontFamily: "Helvetica-Bold", color: C.brand },
+  assinaturas: { flexDirection: "row", justifyContent: "space-between", marginTop: 32 },
   assinatura: { width: 220, borderTopWidth: 1, borderTopColor: C.muted, paddingTop: 4, textAlign: "center", fontSize: 8.5, color: C.muted },
-  footer: { position: "absolute", bottom: 24, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", fontSize: 7.5, color: C.subtle },
+  footerLeft: { position: "absolute", bottom: 24, left: 40, fontSize: 7.5, color: C.subtle },
+  footerRight: { position: "absolute", bottom: 24, right: 40, fontSize: 7.5, color: C.subtle },
 });
 
 function enderecoLinha(e: {
@@ -110,6 +111,14 @@ export function DocumentoPDF({ d, geradoEm }: { d: PdfDados; geradoEm: string })
   return (
     <Document title={`${numero} - ${nomeEmpresa}`} author={nomeEmpresa} creator="TecDesk">
       <Page size="A4" style={s.page}>
+        <Text style={s.footerLeft} fixed>
+          {`${numero} · gerado em ${geradoEm}`}
+        </Text>
+        <Text
+          style={s.footerRight}
+          fixed
+          render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`}
+        />
         <View style={s.header}>
           <View style={s.empresa}>
             <Text style={s.empresaNome}>{nomeEmpresa}</Text>
@@ -242,12 +251,6 @@ export function DocumentoPDF({ d, geradoEm }: { d: PdfDados; geradoEm: string })
           </View>
         ) : null}
 
-        <View style={s.footer} fixed>
-          <Text>
-            {numero} · gerado em {geradoEm}
-          </Text>
-          <Text render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
-        </View>
       </Page>
     </Document>
   );
