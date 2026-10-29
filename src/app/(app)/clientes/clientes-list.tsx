@@ -2,18 +2,19 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Users } from "lucide-react";
+import { Filter, Plus, Users } from "lucide-react";
 import { ClienteModal } from "@/components/clientes/cliente-modal";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox, Select } from "@/components/ui/controls";
+import { Field } from "@/components/ui/input";
 import { SelectionBar, toggleId } from "@/components/ui/list-toolbar";
 import { ConfirmDialog } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
 import type { Enums, Tables } from "@/lib/database.types";
-import { date, normalize, phone } from "@/lib/format";
+import { date, money, normalize, phone } from "@/lib/format";
 import { CANAL_LABEL } from "@/lib/labels";
 import { excluirClientes } from "./actions";
 import { ClienteDrawer } from "./cliente-drawer";
@@ -43,10 +44,56 @@ export function toCliente(r: ClienteResumo): Cliente {
   };
 }
 
-export function ClientesList({ clientes, abrirId }: { clientes: ClienteResumo[]; abrirId: string | null }) {
+export type ResumoClientes = {
+  clientes: number;
+  valorMedio: number;
+  emGarantia: number;
+  orcamentos: number;
+  aceitos: number;
+};
+
+function Resumo({ r }: { r: ResumoClientes }) {
+  const taxa = r.orcamentos ? Math.round((r.aceitos / r.orcamentos) * 100) : null;
+  const itens = [
+    { label: "Nº de clientes", valor: String(r.clientes), sub: null },
+    { label: "Valor médio dos serviços", valor: money(r.valorMedio), sub: null },
+    { label: "Clientes em garantia", valor: String(r.emGarantia), sub: null },
+    {
+      label: "Tx. de orçamentos aceitos",
+      valor: taxa === null ? "—" : `${taxa}%`,
+      sub: r.orcamentos ? `${r.aceitos} de ${r.orcamentos} orçamentos` : "Nenhum orçamento ainda",
+    },
+  ];
+  return (
+    <Card className="mb-6 grid grid-cols-2 gap-x-4 gap-y-5 p-5 lg:grid-cols-4">
+      {itens.map((i) => (
+        <div key={i.label} className="min-w-0">
+          <p className="text-[13px] text-ink-muted">{i.label}</p>
+          <p className="mt-1 text-[22px] leading-7 font-semibold tracking-[-0.02em] tabular-nums">{i.valor}</p>
+          {i.sub ? <p className="text-xs text-ink-subtle">{i.sub}</p> : null}
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+export function ClientesList({
+  clientes,
+  abrirId,
+  resumo,
+  emGarantia,
+}: {
+  clientes: ClienteResumo[];
+  abrirId: string | null;
+  resumo: ResumoClientes;
+  emGarantia: string[];
+}) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [canal, setCanal] = useState<Enums<"cliente_canal"> | "">("");
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  const [situacao, setSituacao] = useState<"" | "garantia" | "com" | "sem">("");
+  const garantia = useMemo(() => new Set(emGarantia), [emGarantia]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(abrirId);
   const [modal, setModal] = useState<{ cliente: Cliente | null } | null>(null);
@@ -61,13 +108,16 @@ export function ClientesList({ clientes, abrirId }: { clientes: ClienteResumo[];
     const digits = q.replace(/\D/g, "");
     return clientes.filter((c) => {
       if (canal && c.canal !== canal) return false;
+      if (situacao === "garantia" && !garantia.has(c.id ?? "")) return false;
+      if (situacao === "com" && !(c.servicos_prestados ?? 0)) return false;
+      if (situacao === "sem" && (c.servicos_prestados ?? 0) > 0) return false;
       if (!term) return true;
       return (
         normalize(`${c.nome} ${c.email ?? ""} ${c.cidade ?? ""} ${c.bairro ?? ""}`).includes(term) ||
         (digits.length >= 3 && (c.telefone ?? "").includes(digits))
       );
     });
-  }, [clientes, q, canal]);
+  }, [clientes, q, canal, situacao, garantia]);
 
   const aberto = clientes.find((c) => c.id === openId) ?? null;
 
@@ -90,36 +140,72 @@ export function ClientesList({ clientes, abrirId }: { clientes: ClienteResumo[];
     <>
       <PageHeader
         title="Clientes"
-        description={`${clientes.length} ${clientes.length === 1 ? "cliente" : "clientes"}`}
-        actions={
-          <Button variant="cta" icon={<Plus />} onClick={() => setModal({ cliente: null })}>
-            Novo cliente
-          </Button>
-        }
+        description="Seus clientes, os equipamentos de cada um e o histórico de atendimentos."
       />
 
+      <Resumo r={resumo} />
+
       <Card>
-        <div className="flex flex-wrap items-center gap-3 p-4">
-          <SearchInput
-            value={q}
-            onChange={setQ}
-            placeholder="Nome, telefone, e-mail ou cidade"
-            className="w-full sm:w-80"
-          />
-          <div className="w-full sm:w-56">
-            <Select
-              aria-label="Filtrar por canal"
-              value={canal}
-              onChange={(e) => setCanal(e.target.value as Enums<"cliente_canal"> | "")}
-            >
-              <option value="">Todos os canais</option>
-              {Object.entries(CANAL_LABEL).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </Select>
+        <div className="grid gap-3 p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <SearchInput
+              value={q}
+              onChange={setQ}
+              placeholder="Nome, telefone, e-mail ou cidade"
+              className="w-full sm:w-80"
+            />
+            <div className="ml-auto flex w-full gap-2 sm:w-auto">
+              <Button
+                variant="outline"
+                icon={<Filter />}
+                onClick={() => setFiltrosAbertos((v) => !v)}
+                className="flex-1 sm:flex-none"
+                aria-expanded={filtrosAbertos}
+              >
+                Filtros{canal || situacao ? " (ativos)" : ""}
+              </Button>
+              <Button variant="cta" icon={<Plus />} onClick={() => setModal({ cliente: null })} className="flex-1 sm:flex-none">
+                Novo cliente
+              </Button>
+            </div>
           </div>
+          {filtrosAbertos ? (
+            <div className="grid gap-3 rounded-lg bg-surface-muted p-3 sm:grid-cols-[repeat(2,minmax(0,240px))_auto] sm:items-end">
+              <Field label="Canal" htmlFor="f-canal">
+                <Select
+                  id="f-canal"
+                  value={canal}
+                  onChange={(e) => setCanal(e.target.value as Enums<"cliente_canal"> | "")}
+                >
+                  <option value="">Todos os canais</option>
+                  {Object.entries(CANAL_LABEL).map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Situação" htmlFor="f-sit">
+                <Select id="f-sit" value={situacao} onChange={(e) => setSituacao(e.target.value as typeof situacao)}>
+                  <option value="">Todos</option>
+                  <option value="garantia">Em garantia</option>
+                  <option value="com">Com atendimentos</option>
+                  <option value="sem">Sem atendimentos</option>
+                </Select>
+              </Field>
+              {canal || situacao ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setCanal("");
+                    setSituacao("");
+                  }}
+                >
+                  Limpar filtros
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {clientes.length === 0 ? (
