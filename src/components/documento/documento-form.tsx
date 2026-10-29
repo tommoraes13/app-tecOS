@@ -31,6 +31,7 @@ import { DURACOES, EQUIPAMENTO_CURTO } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { ItemList } from "./item-list";
+import { PdfActions } from "./pdf-actions";
 
 type Equipamento = Tables<"base_equipamentos">;
 type Mode = "os" | "orcamento";
@@ -158,6 +159,7 @@ export function DocumentoForm({
   const acoes = (
     <div className="grid gap-2">
       {feedback ? <Feedback kind={feedback.kind}>{feedback.text}</Feedback> : null}
+      {form.id ? <PdfActions tipo={mode} id={form.id} numero={form.numero} className="mb-1" /> : null}
       {isOS ? (
         <>
           {!finalizado ? (

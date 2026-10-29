@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Wrench } from "lucide-react";
+import { PdfActions } from "@/components/documento/pdf-actions";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -347,6 +348,8 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
               <p className="rounded-lg bg-surface-muted p-3 text-sm whitespace-pre-wrap">{aberto.relato}</p>
             </section>
           ) : null}
+
+          <PdfActions tipo="os" id={aberto.id} numero={aberto.numero} />
 
           <Field label="Mudar status" htmlFor="dr-status">
             <Select
