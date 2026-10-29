@@ -32,11 +32,21 @@ jobs:
           if [ $status -eq 0 ]; then
             npm run build 2>&1 | tee build.log || status=1
           fi
+          if [ $status -eq 0 ]; then
+            npx --yes tsx@4 scripts/teste-pdf.tsx teste-os.pdf 2>&1 | tee pdf.log || status=1
+          fi
           if [ $status -ne 0 ]; then
-            for f in tipos.log build.log; do
+            for f in tipos.log build.log pdf.log; do
               [ -s "$f" ] || continue
               msg=$(grep -vE '^\s*$' "$f" | tail -80 | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
               echo "::error title=$f::$msg"
             done
             exit 1
           fi
+      - name: PDF de exemplo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-exemplo
+          path: teste-os.pdf
+          if-no-files-found: ignore
