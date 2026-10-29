@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { date, docNumber, todayISO } from "@/lib/format";
 import { carregarPdf } from "@/lib/pdf/dados";
 import { DocumentoPDF } from "@/lib/pdf/documento-pdf";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,9 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (tipo !== "os" && tipo !== "orcamento") return new NextResponse("Documento inválido", { status: 404 });
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return NextResponse.redirect(new URL("/login", request.url));
 
   const dados = await carregarPdf(supabase, tipo, id);

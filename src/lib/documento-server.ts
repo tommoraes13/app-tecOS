@@ -92,7 +92,7 @@ function toItens(rows: ItemRow[] | null, tempos: Map<string, number | null>): It
   });
 }
 
-export async function carregarAtendimento(supabase: Client, id: string, servicos: CatalogoServico[]) {
+export async function carregarAtendimento(supabase: Client, id: string, servicos: CatalogoServico[] = []) {
   const { data: os } = await supabase.from("base_atendimentos").select("*").eq("id", id).maybeSingle();
   if (!os) return null;
   const [vis, sv, pr, eq, orc] = await Promise.all([
@@ -149,7 +149,12 @@ export async function carregarAtendimento(supabase: Client, id: string, servicos
   return { form, orcamentoOrigem: orc.data ?? null };
 }
 
-export async function carregarOrcamento(supabase: Client, id: string, servicos: CatalogoServico[], padroes: Padroes) {
+export async function carregarOrcamento(
+  supabase: Client,
+  id: string,
+  servicos: CatalogoServico[] = [],
+  padroes: Padroes = { valor_visita: 0, duracao_visita_min: 60, cobrar_visita: false },
+) {
   const { data: orc } = await supabase.from("base_orcamentos").select("*").eq("id", id).maybeSingle();
   if (!orc) return null;
   const [sv, pr, os] = await Promise.all([
@@ -182,4 +187,13 @@ export async function carregarOrcamento(supabase: Client, id: string, servicos: 
     observacoes: orc.observacoes ?? "",
   };
   return { form, osGerada: os.data ?? null };
+}
+
+/** Preenche o tempo médio dos serviços do catálogo (usado na duração sugerida). */
+export function aplicarTempos(form: DocForm, servicos: CatalogoServico[]): DocForm {
+  const tempos = new Map(servicos.map((s) => [s.id, s.tempo_medio_min]));
+  return {
+    ...form,
+    servicos: form.servicos.map((i) => (i.catalogId ? { ...i, tempo_min: tempos.get(i.catalogId) ?? null } : i)),
+  };
 }

@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { date } from "@/lib/format";
 import { ContaForms } from "./conta-forms";
 
 export const metadata: Metadata = { title: "Minha Conta" };
 
 export default async function MinhaContaPage() {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return (
     <>
       <PageHeader title="Minha Conta" description={user?.email ?? ""} />

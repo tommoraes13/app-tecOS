@@ -5,11 +5,10 @@ export type ActionResult<T = null> = { ok: true; data: T } | { ok: false; error:
 /** Cliente do Supabase + usuário logado, para Server Actions. */
 export async function requireUser() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Sua sessão expirou. Entre de novo.");
-  return { supabase, user };
+  const { data } = await supabase.auth.getClaims();
+  const id = data?.claims?.sub;
+  if (!id) throw new Error("Sua sessão expirou. Entre de novo.");
+  return { supabase, user: { id } };
 }
 
 type DbError = { code?: string; message?: string; details?: string } | null | undefined;
