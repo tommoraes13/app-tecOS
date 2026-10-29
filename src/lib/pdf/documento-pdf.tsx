@@ -15,8 +15,8 @@ const C = {
 };
 
 const s = StyleSheet.create({
-  page: { paddingTop: 36, paddingBottom: 56, paddingHorizontal: 40, fontSize: 9.5, color: C.ink, fontFamily: "Helvetica", lineHeight: 1.35 },
-  header: { flexDirection: "row", justifyContent: "space-between", paddingBottom: 14, borderBottomWidth: 2, borderBottomColor: C.brand, marginBottom: 16 },
+  page: { paddingTop: 32, paddingBottom: 48, paddingHorizontal: 40, fontSize: 9.5, color: C.ink, fontFamily: "Helvetica", lineHeight: 1.35 },
+  header: { flexDirection: "row", justifyContent: "space-between", paddingBottom: 12, borderBottomWidth: 2, borderBottomColor: C.brand, marginBottom: 14 },
   empresa: { maxWidth: 300 },
   empresaNome: { fontSize: 15, fontFamily: "Helvetica-Bold", marginBottom: 3 },
   small: { fontSize: 8.5, color: C.muted },
@@ -24,7 +24,7 @@ const s = StyleSheet.create({
   docTipo: { fontSize: 8.5, color: C.subtle, letterSpacing: 1 },
   docNum: { fontSize: 18, lineHeight: 1.1, fontFamily: "Helvetica-Bold", color: C.brand, marginTop: 3, marginBottom: 4 },
   sectionTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: C.subtle, letterSpacing: 0.8, marginBottom: 5 },
-  section: { marginBottom: 14 },
+  section: { marginBottom: 11 },
   box: { backgroundColor: C.surfaceMuted, borderRadius: 6, padding: 10 },
   row: { flexDirection: "row" },
   bold: { fontFamily: "Helvetica-Bold" },
@@ -41,7 +41,7 @@ const s = StyleSheet.create({
   assinaturas: { flexDirection: "row", justifyContent: "space-between", marginTop: 32 },
   assinatura: { width: 220, borderTopWidth: 1, borderTopColor: C.muted, paddingTop: 4, textAlign: "center", fontSize: 8.5, color: C.muted },
   footerLeft: { position: "absolute", bottom: 24, left: 40, fontSize: 7.5, color: C.subtle },
-  footerRight: { position: "absolute", bottom: 24, right: 40, fontSize: 7.5, color: C.subtle },
+  footerRight: { position: "absolute", bottom: 24, right: 40, width: 120, textAlign: "right", fontSize: 7.5, color: C.subtle },
 });
 
 function enderecoLinha(e: {
