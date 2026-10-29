@@ -10,6 +10,9 @@ concurrency:
   group: verificar-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -46,9 +49,14 @@ jobs:
             exit 1
           fi
       - name: PDF de exemplo
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pdf-exemplo
-          path: teste-os.pdf
-          if-no-files-found: ignore
+        if: success()
+        run: |
+          # Publica o PDF de exemplo numa branch separada, para conferência visual.
+          mkdir -p /tmp/art && cp teste-os.pdf /tmp/art/
+          cd /tmp/art
+          git init -q -b ci-artefatos
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add teste-os.pdf
+          git commit -q -m "PDF de exemplo (${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-artefatos
