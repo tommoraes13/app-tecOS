@@ -1,13 +1,14 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import { hasSupabaseEnv, supabaseKey, supabaseUrl } from "./env";
 
 /** Cliente do Supabase para Server Components, Server Actions e Route Handlers. */
-export async function createClient() {
+export async function createClient(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
 
-  return createServerClient<Database>(supabaseUrl, supabaseKey, {
+  const client = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -23,6 +24,7 @@ export async function createClient() {
       },
     },
   });
+  return client as unknown as SupabaseClient<Database>;
 }
 
 /** Usuário logado, ou null (inclusive quando o Supabase ainda não foi configurado). */

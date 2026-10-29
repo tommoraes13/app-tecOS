@@ -17,7 +17,7 @@ echo "verificacao: $conclusion"
 if [ "$conclusion" != "success" ]; then
   id=$(jq -r .databaseId <<<"$run")
   for cr in $(gh api "repos/$REPO/commits/$SHA/check-runs" -q '.check_runs[] | select(.conclusion=="failure") | .id'); do
-    gh api "repos/$REPO/check-runs/$cr/annotations" -q '.[] | "--- " + .title + "\n" + .message'
+    gh api "repos/$REPO/check-runs/$cr/annotations" -q '.[] | select(.title | test("\\.log$")) | "--- " + .title + "\n" + .message'
   done
   echo "run: $id"
   exit 1
