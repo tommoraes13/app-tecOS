@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 /**
  * Botões em pílula (Design System > Button).
  * cta = degradê verde, no máximo um por tela · dark = conclui formulários ·
- * outline = secundárias · ghost = cancelar · danger = excluir.
+ * outline = secundárias · ghost = cancelar · danger = excluir (claro) · dangerSolid = confirmar exclusão ·
+ * success = concluir (Finalizar OS) · successSoft = ações positivas secundárias (WhatsApp, transformar).
  */
 export const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 rounded-full border border-transparent font-medium whitespace-nowrap transition-[background-color,box-shadow,transform] duration-150 select-none disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0",
@@ -18,6 +19,9 @@ export const buttonVariants = cva(
         outline: "border-border bg-surface text-ink hover:bg-surface-muted",
         ghost: "text-ink-muted hover:bg-surface-muted hover:text-ink",
         danger: "bg-danger-bg text-danger hover:opacity-90",
+        dangerSolid: "bg-danger-solid text-white hover:opacity-90",
+        success: "bg-brand-600 text-white hover:opacity-90",
+        successSoft: "bg-success-bg text-success hover:opacity-90",
       },
       size: {
         md: "h-11 px-4 text-sm lg:h-10",

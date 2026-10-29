@@ -33,7 +33,8 @@ export async function salvarPerfil(input: PerfilInput): Promise<ActionResult> {
 export async function salvarFoto(path: string | null): Promise<ActionResult> {
   try {
     const { supabase, user } = await requireUser();
-    if (path && !path.startsWith(`${user.id}/`)) return { ok: false, error: "Arquivo inválido." };
+    // Só aceita o arquivo da própria pasta, com o nome que o app gera.
+    if (path && !new RegExp(`^${user.id}/foto-\\d+\\.(jpg|webp)$`).test(path)) return { ok: false, error: "Arquivo inválido." };
     const { data: atual } = await supabase.from("perfil").select("foto_path").eq("user_id", user.id).maybeSingle();
     const { error } = await supabase.from("perfil").update({ foto_path: path }).eq("user_id", user.id);
     if (error) return fail(error);

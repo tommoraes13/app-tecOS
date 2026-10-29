@@ -85,6 +85,7 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
   return (
     <>
       <PageHeader
+        icon={FileText}
         title={t("Orçamentos")}
         description={t("{n} aguardando aceite · {valor} em aberto", { n: aguardando.length, valor: money(totalAguardando) })}
         actions={

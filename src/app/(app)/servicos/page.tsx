@@ -7,7 +7,7 @@ import { ServicosList, type Filtros, type OsLinha } from "./servicos-list";
 /** Quantas OS aparecem por página (precisa ficar aqui: valores de arquivos "use client" não chegam ao servidor). */
 const POR_PAGINA = 10;
 
-export const generateMetadata = pageTitle("Serviços Prestados");
+export const generateMetadata = pageTitle("Atendimentos");
 
 const STATUS: Enums<"os_status">[] = ["em_andamento", "pendente", "aguardando_pagamento", "finalizado", "retorno"];
 const dataOk = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "");
@@ -15,7 +15,7 @@ const dataOk = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "");
 export default async function ServicosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string; q?: string; de?: string; ate?: string; cat?: string; pagina?: string }>;
+  searchParams: Promise<{ aba?: string; q?: string; de?: string; ate?: string; cat?: string; pagina?: string; ver?: string }>;
 }) {
   const sp = await searchParams;
   const filtros: Filtros = {
@@ -100,6 +100,7 @@ export default async function ServicosPage({
       filtros={filtros}
       algumaOs={(rec.data ?? []).length > 0}
       porPagina={POR_PAGINA}
+      verId={sp.ver && /^[0-9a-f-]{36}$/.test(sp.ver) ? sp.ver : null}
     />
   );
 }

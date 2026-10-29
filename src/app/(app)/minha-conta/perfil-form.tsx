@@ -29,19 +29,27 @@ const FUSOS_BR = [
   ["America/Noronha", "Fernando de Noronha"],
 ] as const;
 
-/** Reduz a foto para 320×320 (corte central) antes de enviar. */
+/**
+ * Reduz a foto para 256×256 (corte central) e comprime antes de enviar:
+ * WEBP quando o navegador permite (mais leve), senão JPEG. Fica em torno de 10 a 25 KB.
+ */
 async function prepararFoto(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const lado = Math.min(bitmap.width, bitmap.height);
   const canvas = document.createElement("canvas");
-  canvas.width = 320;
-  canvas.height = 320;
+  canvas.width = 256;
+  canvas.height = 256;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas");
-  ctx.drawImage(bitmap, (bitmap.width - lado) / 2, (bitmap.height - lado) / 2, lado, lado, 0, 0, 320, 320);
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("blob"))), "image/jpeg", 0.85),
-  );
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, (bitmap.width - lado) / 2, (bitmap.height - lado) / 2, lado, lado, 0, 0, 256, 256);
+  bitmap.close();
+  const gerar = (tipo: string, q: number) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, tipo, q));
+  const webp = await gerar("image/webp", 0.8);
+  if (webp && webp.type === "image/webp") return webp;
+  const jpeg = await gerar("image/jpeg", 0.8);
+  if (!jpeg) throw new Error("blob");
+  return jpeg;
 }
 
 export function PerfilForm({ perfil }: { perfil: Perfil }) {
@@ -69,13 +77,17 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
 
   async function trocarFoto(file: File) {
     setMsg(null);
-    if (!file.type.startsWith("image/")) return setMsg({ kind: "error", text: t("Escolha uma imagem (JPG, PNG ou WEBP).") });
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+      return setMsg({ kind: "error", text: t("Escolha uma imagem (JPG, PNG ou WEBP).") });
+    if (file.size > 15 * 1024 * 1024) return setMsg({ kind: "error", text: t("A imagem é muito grande. Use uma de até 15 MB.") });
     setEnviando(true);
     try {
       const blob = await prepararFoto(file);
-      const path = `${perfil.id}/foto-${Date.now()}.jpg`;
+      const ext = blob.type === "image/webp" ? "webp" : "jpg";
+      const path = `${perfil.id}/foto-${Date.now()}.${ext}`;
       const { error } = await createClient().storage.from("avatars").upload(path, blob, {
-        contentType: "image/jpeg",
+        contentType: blob.type,
+        cacheControl: "31536000",
         upsert: false,
       });
       if (error) throw error;

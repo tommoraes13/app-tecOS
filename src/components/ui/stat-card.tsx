@@ -10,12 +10,15 @@ export function StatCard({
   delta,
   rows = [],
   featured = false,
+  valueClassName,
 }: {
   label: string;
   value: string;
   delta?: { value: string; direction: "up" | "down" };
   rows?: Row[];
   featured?: boolean;
+  /** Cor do número (ex.: text-warning para valores a receber). */
+  valueClassName?: string;
 }) {
   return (
     <div
@@ -27,7 +30,12 @@ export function StatCard({
       <span className={cn("text-[13px] leading-[18px]", featured ? "text-on-brand-muted" : "text-ink-muted")}>
         {label}
       </span>
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[22px] leading-7 font-semibold tracking-[-0.02em] tabular-nums sm:text-[28px] sm:leading-8">
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[22px] leading-7 font-semibold tracking-[-0.02em] tabular-nums sm:text-[28px] sm:leading-8",
+          !featured && valueClassName,
+        )}
+      >
         {value}
         {delta ? (
           <span

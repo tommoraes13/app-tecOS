@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check } from "lucide-react";
+import { Check, CreditCard } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card } from "@/components/ui/card";
 import { getI18n } from "@/i18n/server";
@@ -29,6 +29,7 @@ export default async function MeuPlanoPage() {
   return (
     <>
       <PageHeader
+        icon={CreditCard}
         title={t("Meu Plano")}
         description={user?.created_at ? t("Conta criada em {data}", { data: fmt.date(user.created_at.slice(0, 10)) }) : ""}
       />

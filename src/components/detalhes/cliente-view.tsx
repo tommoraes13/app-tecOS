@@ -14,6 +14,7 @@ import type { Tables } from "@/lib/database.types";
 import { asSpecs, resumoEquipamento, type TipoEquipamento } from "@/lib/equipamentos";
 import { cep, docNumber, phone, whatsappLink } from "@/lib/format";
 import { CANAL_LABEL, EQUIPAMENTO_CURTO } from "@/lib/labels";
+import { VALOR_COR } from "@/lib/status";
 import { carregarCliente, type ClienteDetalhe } from "./actions";
 import { LinhaLista, listaClass, Secao, vazioClass, ViewShell } from "./parts";
 import type { ViewProps } from "./viewer";
@@ -133,7 +134,7 @@ export function ClienteView({ id, onClose, onBack, abrir }: ViewProps) {
       overline={c ? (qtd === 1 ? t("1 serviço prestado") : t("{n} serviços prestados", { n: qtd })) : undefined}
       footer={
         <>
-          <Button variant="danger" onClick={excluir} disabled={pending} className={confirmar ? undefined : "mr-auto"}>
+          <Button variant={confirmar ? "dangerSolid" : "danger"} onClick={excluir} disabled={pending} className={confirmar ? undefined : "mr-auto"}>
             {confirmar ? t("Confirmar exclusão") : t("Excluir")}
           </Button>
           <ButtonLink href={`/servicos/novo?cliente=${id}`} variant="outline" onClick={onClose}>
@@ -225,7 +226,7 @@ export function ClienteView({ id, onClose, onBack, abrir }: ViewProps) {
                       <StatusBadge status={o.status} />
                     </span>
                     <span className="text-right text-xs">
-                      <span className="block font-medium tabular-nums">{money(o.valor_total)}</span>
+                      <span className={`block font-semibold tabular-nums ${VALOR_COR[o.status]}`}>{money(o.valor_total)}</span>
                       <span className="block text-ink-subtle tabular-nums">{date(o.data_inicio)}</span>
                     </span>
                   </LinhaLista>

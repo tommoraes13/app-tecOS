@@ -79,11 +79,11 @@ export function DocumentoView({ tipo, id, onClose, onBack, abrir }: ViewProps & 
       title={d ? (d.cliente?.nome ?? t("Cliente não definido")) : isOS ? t("Ordem de serviço") : t("Orçamento")}
       footer={
         <>
-          <Button variant="danger" onClick={excluir} disabled={pending} className={confirmar ? undefined : "mr-auto"}>
+          <Button variant={confirmar ? "dangerSolid" : "danger"} onClick={excluir} disabled={pending} className={confirmar ? undefined : "mr-auto"}>
             {confirmar ? t("Confirmar exclusão") : t("Excluir")}
           </Button>
           {!isOS && d && !d.vinculo ? (
-            <Button variant="outline" onClick={transformar} disabled={pending}>
+            <Button variant="successSoft" onClick={transformar} disabled={pending}>
               {t("Transformar em atendimento")}
             </Button>
           ) : null}
@@ -128,7 +128,9 @@ export function DocumentoView({ tipo, id, onClose, onBack, abrir }: ViewProps & 
             <Dado rotulo={t("Total")}>{money(d.total)}</Dado>
             {isOS ? (
               <Dado rotulo={t("Recebimento")}>
-                {d.recebido ? money(d.recebido.valor) : t("Não recebido")}
+                <span className={d.recebido ? "text-success" : "text-warning"}>
+                  {d.recebido ? money(d.recebido.valor) : t("Não recebido")}
+                </span>
                 {d.recebido?.data ? <span className="block text-xs font-normal text-ink-subtle">{date(d.recebido.data)}</span> : null}
               </Dado>
             ) : (
@@ -204,6 +206,7 @@ export function DocumentoView({ tipo, id, onClose, onBack, abrir }: ViewProps & 
                   <Linha
                     rotulo={`${t("Desconto")}${d.descontoPct ? ` (${fmt.number(d.descontoPct, 2)}%)` : ""}`}
                     valor={`− ${money(d.desconto)}`}
+                    cor="text-danger"
                   />
                 ) : null}
               </>
@@ -251,11 +254,11 @@ export function DocumentoView({ tipo, id, onClose, onBack, abrir }: ViewProps & 
   );
 }
 
-function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
+function Linha({ rotulo, valor, cor = "text-ink" }: { rotulo: string; valor: string; cor?: string }) {
   return (
     <div className="flex justify-between gap-2 text-ink-muted">
       {rotulo}
-      <span className="font-medium text-ink tabular-nums">{valor}</span>
+      <span className={`font-semibold tabular-nums ${cor}`}>{valor}</span>
     </div>
   );
 }

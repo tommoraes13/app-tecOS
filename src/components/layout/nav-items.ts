@@ -22,7 +22,7 @@ export const mainNav: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agenda", label: "Minha Agenda", icon: CalendarDays },
   { href: "/orcamentos", label: "Orçamentos", icon: FileText },
-  { href: "/servicos", label: "Serviços Prestados", icon: Wrench },
+  { href: "/servicos", label: "Atendimentos", icon: Wrench },
   { href: "/clientes", label: "Clientes", icon: Users },
   {
     href: "/cadastros",

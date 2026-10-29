@@ -6,19 +6,22 @@ import { Plus, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/layout/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CategoriaTag } from "@/components/ui/categoria-tag";
 import { Checkbox, Feedback, MoneyInput, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import { nextCode, SelectionBar, toggleId } from "@/components/ui/list-toolbar";
 import { ConfirmDialog, Modal } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
-import { Tag } from "@/components/ui/status-badge";
-import type { Enums, Tables } from "@/lib/database.types";
+import { PillTabs } from "@/components/ui/tabs";
 import { useI18n } from "@/i18n/client";
+import type { Enums, Tables } from "@/lib/database.types";
 import { duration, normalize } from "@/lib/format";
-import { CATEGORIA_LABEL, EQUIPAMENTO_CURTO, TEMPOS_MEDIOS } from "@/lib/labels";
+import { CATEGORIA_LABEL, TEMPOS_MEDIOS } from "@/lib/labels";
 import { excluirServicos, salvarServico, type ServicoInput } from "../actions";
 
 type Servico = Tables<"cadastro_servicos">;
+type Categoria = Enums<"servico_categoria">;
+type Aba = Categoria | "todos" | "sem";
 
 const empty: ServicoInput = {
   nome: "",
@@ -28,7 +31,6 @@ const empty: ServicoInput = {
   localizacao_pastas: "",
   valor: 0,
   tempo_medio_min: null,
-  tipo_equipamento: "",
 };
 
 function toInput(s: Servico): ServicoInput {
@@ -41,16 +43,16 @@ function toInput(s: Servico): ServicoInput {
     localizacao_pastas: s.localizacao_pastas ?? "",
     valor: s.valor,
     tempo_medio_min: s.tempo_medio_min,
-    tipo_equipamento: s.tipo_equipamento ?? "",
   };
 }
 
-const TIPOS_EQUIPAMENTO = Object.values(EQUIPAMENTO_CURTO);
+const CATEGORIAS = Object.keys(CATEGORIA_LABEL) as Categoria[];
 
 export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servico[]; abrirId?: string | null }) {
   const { t, fmt } = useI18n();
   const router = useRouter();
   const [q, setQ] = useState("");
+  const [aba, setAba] = useState<Aba>("todos");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // Vindo da busca (?abrir=<id>): já abre o serviço para editar.
   const [editing, setEditing] = useState<ServicoInput | null>(() => {
@@ -61,12 +63,14 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const list = useMemo(() => {
+  const buscados = useMemo(() => {
     const term = normalize(q);
-    return term
-      ? servicos.filter((s) => normalize(`${s.nome} ${s.codigo ?? ""}`).includes(term))
-      : servicos;
+    return term ? servicos.filter((s) => normalize(`${s.nome} ${s.codigo ?? ""}`).includes(term)) : servicos;
   }, [servicos, q]);
+  const contar = (a: Aba) =>
+    a === "todos" ? buscados.length : buscados.filter((s) => (a === "sem" ? !s.categoria : s.categoria === a)).length;
+  const list = aba === "todos" ? buscados : buscados.filter((s) => (aba === "sem" ? !s.categoria : s.categoria === aba));
+  const temSemCategoria = servicos.some((s) => !s.categoria);
 
   function save() {
     if (!editing) return;
@@ -88,8 +92,11 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
     });
   }
 
+  const abrir = (s: Servico) => {
+    setError(null);
+    setEditing(toInput(s));
+  };
   const set = (patch: Partial<ServicoInput>) => setEditing((e) => (e ? { ...e, ...patch } : e));
-  const tipoOutro = editing && editing.tipo_equipamento !== "" && !TIPOS_EQUIPAMENTO.includes(editing.tipo_equipamento);
   const tempos =
     editing?.tempo_medio_min && !TEMPOS_MEDIOS.includes(editing.tempo_medio_min)
       ? [...TEMPOS_MEDIOS, editing.tempo_medio_min].sort((a, b) => a - b)
@@ -97,19 +104,36 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
 
   return (
     <Card>
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-        <SearchInput value={q} onChange={setQ} placeholder={t("Buscar serviço ou código")} className="w-full sm:w-72" />
-        <Button
-          variant="dark"
-          icon={<Plus />}
-          onClick={() => {
-            setError(null);
-            setEditing({ ...empty, codigo: nextCode("SV", servicos.map((s) => s.codigo)) });
-          }}
-          className="w-full sm:w-auto"
-        >
-          {t("Novo serviço")}
-        </Button>
+      <div className="grid gap-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <SearchInput value={q} onChange={setQ} placeholder={t("Buscar serviço ou código")} className="w-full sm:w-72" />
+          <Button
+            variant="dark"
+            icon={<Plus />}
+            onClick={() => {
+              setError(null);
+              setEditing({
+                ...empty,
+                categoria: aba !== "todos" && aba !== "sem" ? aba : "",
+                codigo: nextCode("SV", servicos.map((s) => s.codigo)),
+              });
+            }}
+            className="w-full sm:w-auto"
+          >
+            {t("Novo serviço")}
+          </Button>
+        </div>
+        {servicos.length > 0 ? (
+          <PillTabs
+            value={aba}
+            onChange={setAba}
+            items={[
+              { value: "todos" as Aba, label: t("Todos"), count: contar("todos") },
+              ...CATEGORIAS.map((c) => ({ value: c as Aba, label: t(CATEGORIA_LABEL[c]), count: contar(c) })),
+              ...(temSemCategoria ? [{ value: "sem" as Aba, label: t("Sem categoria"), count: contar("sem") }] : []),
+            ]}
+          />
+        ) : null}
       </div>
 
       {servicos.length === 0 ? (
@@ -119,39 +143,75 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
           description={t("Cadastre os serviços que você mais faz. Eles aparecem para escolher na OS, já com valor e tempo médio.")}
         />
       ) : list.length === 0 ? (
-        <p className="px-4 pb-6 text-center text-sm text-ink-subtle">{t("Nenhum serviço encontrado para “{q}”.", { q })}</p>
+        <p className="px-4 pb-6 text-center text-sm text-ink-subtle">
+          {q ? t("Nenhum serviço encontrado para “{q}”.", { q }) : t("Nenhum serviço nesta categoria.")}
+        </p>
       ) : (
-        <ul className="divide-y divide-border border-t border-border">
-          {list.map((s) => (
-            <li key={s.id} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted">
-              <Checkbox
-                aria-label={t("Selecionar {nome}", { nome: s.nome })}
-                checked={selected.has(s.id)}
-                onChange={() => setSelected((set) => toggleId(set, s.id))}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setEditing(toInput(s));
-                }}
-                className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-left"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{s.nome}</span>
-                  <span className="block text-xs text-ink-subtle">
-                    {[s.codigo, s.categoria ? t(CATEGORIA_LABEL[s.categoria]) : null].filter(Boolean).join(" · ")}
+        <>
+          {/* Computador: tabela com cabeçalho */}
+          <table className="hidden w-full text-sm md:table">
+            <thead>
+              <tr className="border-y border-border text-left text-xs text-ink-subtle">
+                <th className="w-10 py-2.5 pl-4">
+                  <Checkbox
+                    aria-label={t("Selecionar todos")}
+                    checked={list.length > 0 && list.every((s) => selected.has(s.id))}
+                    onChange={(v) => setSelected(v ? new Set(list.map((s) => s.id)) : new Set())}
+                  />
+                </th>
+                <th className="px-4 py-2.5 font-medium">{t("Serviço")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("Código")}</th>
+                <th className="px-4 py-2.5 font-medium">{t("Tipo de serviço")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t("Tempo médio")}</th>
+                <th className="px-4 py-2.5 text-right font-medium">{t("Valor")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((s) => (
+                <tr key={s.id} onClick={() => abrir(s)} className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-muted">
+                  <td className="py-3 pl-4" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      aria-label={t("Selecionar {nome}", { nome: s.nome })}
+                      checked={selected.has(s.id)}
+                      onChange={() => setSelected((set) => toggleId(set, s.id))}
+                    />
+                  </td>
+                  <td className="px-4 py-3 font-medium">{s.nome}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-ink-subtle">{s.codigo ?? "—"}</td>
+                  <td className="px-4 py-3">{s.categoria ? <CategoriaTag categoria={s.categoria} /> : <span className="text-ink-subtle">—</span>}</td>
+                  <td className="px-4 py-3 text-right text-ink-muted tabular-nums">
+                    {s.tempo_medio_min ? duration(s.tempo_medio_min) : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-success tabular-nums">{fmt.money(s.valor)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Celular: lista de cards */}
+          <ul className="divide-y divide-border border-t border-border md:hidden">
+            {list.map((s) => (
+              <li key={s.id} className="flex items-center gap-3 px-4 py-3">
+                <Checkbox
+                  aria-label={t("Selecionar {nome}", { nome: s.nome })}
+                  checked={selected.has(s.id)}
+                  onChange={() => setSelected((set) => toggleId(set, s.id))}
+                />
+                <button type="button" onClick={() => abrir(s)} className="grid min-w-0 flex-1 gap-1 text-left">
+                  <span className="flex justify-between gap-2">
+                    <span className="truncate font-medium">{s.nome}</span>
+                    <span className="shrink-0 font-semibold text-success tabular-nums">{fmt.money(s.valor)}</span>
                   </span>
-                </span>
-                {s.tipo_equipamento ? <Tag>{t(s.tipo_equipamento)}</Tag> : null}
-                <span className="w-14 text-right text-[13px] text-ink-subtle tabular-nums">
-                  {s.tempo_medio_min ? duration(s.tempo_medio_min) : ""}
-                </span>
-                <span className="w-24 text-right font-medium tabular-nums">{fmt.money(s.valor)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <span className="flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
+                    {s.categoria ? <CategoriaTag categoria={s.categoria} /> : null}
+                    {s.codigo ? <span className="font-mono">{s.codigo}</span> : null}
+                    {s.tempo_medio_min ? <span className="tabular-nums">{duration(s.tempo_medio_min)}</span> : null}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <SelectionBar count={selected.size} onClear={() => setSelected(new Set())} onDelete={() => setConfirm(true)} />
@@ -186,32 +246,21 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
             </div>
             <Field label={t("Código interno")} htmlFor="sv-cod">
               <div className="flex gap-2">
-                <Input
-                  id="sv-cod"
-                  className="font-mono"
-                  value={editing.codigo}
-                  onChange={(e) => set({ codigo: e.target.value })}
-                />
+                <Input id="sv-cod" className="font-mono" value={editing.codigo} onChange={(e) => set({ codigo: e.target.value })} />
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    set({ codigo: nextCode("SV", servicos.filter((s) => s.id !== editing.id).map((s) => s.codigo)) })
-                  }
+                  onClick={() => set({ codigo: nextCode("SV", servicos.filter((s) => s.id !== editing.id).map((s) => s.codigo)) })}
                 >
                   {t("Gerar")}
                 </Button>
               </div>
             </Field>
             <Field label={t("Tipo de serviço")} htmlFor="sv-cat">
-              <Select
-                id="sv-cat"
-                value={editing.categoria}
-                onChange={(e) => set({ categoria: e.target.value as Enums<"servico_categoria"> | "" })}
-              >
+              <Select id="sv-cat" value={editing.categoria} onChange={(e) => set({ categoria: e.target.value as Categoria | "" })}>
                 <option value="">{t("Sem categoria")}</option>
-                {Object.entries(CATEGORIA_LABEL).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {t(l)}
+                {CATEGORIAS.map((c) => (
+                  <option key={c} value={c}>
+                    {t(CATEGORIA_LABEL[c])}
                   </option>
                 ))}
               </Select>
@@ -253,32 +302,6 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
                 ))}
               </Select>
             </Field>
-            <div className="sm:col-span-2">
-              <Field label={t("Tipo de equipamento")} htmlFor="sv-te">
-                <Select
-                  id="sv-te"
-                  value={tipoOutro ? "__outro" : editing.tipo_equipamento}
-                  onChange={(e) => set({ tipo_equipamento: e.target.value === "__outro" ? " " : e.target.value })}
-                >
-                  <option value="">{t("Qualquer equipamento")}</option>
-                  {TIPOS_EQUIPAMENTO.map((tipo) => (
-                    <option key={tipo} value={tipo}>
-                      {t(tipo)}
-                    </option>
-                  ))}
-                  <option value="__outro">{t("Outro (digitar)")}</option>
-                </Select>
-              </Field>
-              {tipoOutro ? (
-                <Input
-                  className="mt-2"
-                  aria-label={t("Outro tipo de equipamento")}
-                  placeholder={t("Exemplo: Celular")}
-                  value={editing.tipo_equipamento.trimStart()}
-                  onChange={(e) => set({ tipo_equipamento: e.target.value || " " })}
-                />
-              ) : null}
-            </div>
             {error ? (
               <div className="sm:col-span-2">
                 <Feedback kind="error">{error}</Feedback>

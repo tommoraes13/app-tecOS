@@ -1,3 +1,4 @@
+import { ClipboardList } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { CatalogoServicos } from "./catalogo-servicos";
@@ -12,6 +13,7 @@ export default async function CadastroServicosPage({ searchParams }: { searchPar
   return (
     <>
       <PageHeader
+        icon={ClipboardList}
         title={t("Cadastro de Serviços")}
         description={t("Os serviços que você mais faz, com valor e tempo médio. Aparecem para escolher na OS e no orçamento.")}
       />

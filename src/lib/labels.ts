@@ -9,11 +9,11 @@ export const CANAL_LABEL: Record<Enums<"cliente_canal">, string> = {
 };
 
 export const CATEGORIA_LABEL: Record<Enums<"servico_categoria">, string> = {
-  manutencao_corretiva: "Manutenção corretiva",
-  manutencao_preventiva: "Manutenção preventiva/revisão",
-  montagem_pc: "Montagem de PC",
-  backup_recuperacao: "Backup e recuperação de arquivos",
-  redes_impressoras: "Configuração de redes/impressoras",
+  manutencao: "Manutenção",
+  diagnostico_revisao: "Diagnóstico/Revisão",
+  montagem: "Montagem",
+  configuracao: "Configuração",
+  backup_recuperacao: "Backup e Recuperação",
   consultoria: "Consultoria",
   outros: "Outros",
 };

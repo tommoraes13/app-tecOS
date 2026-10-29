@@ -1,3 +1,4 @@
+import { UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { getI18n } from "@/i18n/server";
@@ -15,7 +16,7 @@ export default async function MinhaContaPage() {
   if (!perfil) return null;
   return (
     <>
-      <PageHeader title={t("Minha Conta")} description={perfil.email ?? ""} />
+      <PageHeader icon={UserRound} title={t("Minha Conta")} description={perfil.email ?? ""} />
       <div className="grid max-w-[720px] gap-6">
         <PerfilForm perfil={perfil} />
         <ContaForms />

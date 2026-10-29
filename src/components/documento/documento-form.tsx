@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, FileText, Plus, Trash2, Wrench } from "lucide-react";
 import { finalizarAtendimento, salvarAtendimento, vincularEquipamento } from "@/app/(app)/servicos/actions";
 import { salvarOrcamento, transformarEmAtendimento } from "@/app/(app)/orcamentos/actions";
 import { ClienteModal } from "@/components/clientes/cliente-modal";
 import { EquipamentoModal } from "@/components/clientes/equipamento-modal";
+import { TitleIcon } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
@@ -24,8 +25,10 @@ import {
   type CatalogoServico,
   type ClienteOpcao,
   type DocForm,
+  type ItemForm,
   type Padroes,
 } from "@/lib/documento";
+import { OS_STATUS } from "@/lib/status";
 import { useI18n } from "@/i18n/client";
 import { docNumber, duration, phone } from "@/lib/format";
 import { DURACOES, EQUIPAMENTO_CURTO } from "@/lib/labels";
@@ -180,8 +183,9 @@ export function DocumentoForm({
       });
       const msg =
         r.data.status === "finalizado" ? t("OS finalizada.") : t("OS concluída e marcada como Aguardando Pagamento.");
-      setForm((f) => ({ ...f, status: r.data.status, data_entrega: f.data_entrega || fmt.today() }));
-      afterSave(r.data.id, r.data.numero, msg);
+      setFeedback({ kind: "ok", text: msg });
+      // Volta para Atendimentos com a OS aberta na janela de visualização.
+      router.push(`/servicos?ver=${r.data.id}`);
     });
   }
 
@@ -203,15 +207,57 @@ export function DocumentoForm({
       ? t("Novo atendimento")
       : t("Novo orçamento");
 
+  /** Troca de status. Regra: Finalizado já conta como recebido hoje (pode ajustar em Recebimento). */
+  function mudarStatus(status: DocForm["status"]) {
+    if (status === "finalizado" && !form.recebido) {
+      set({
+        status,
+        recebido: true,
+        valor_recebido: form.valor_recebido ?? tot.total,
+        data_recebimento: fmt.today(),
+        data_entrega: form.data_entrega || fmt.today(),
+      });
+    } else set({ status });
+  }
+
   const acoes = (
     <div className="grid gap-2">
       {feedback ? <Feedback kind={feedback.kind}>{feedback.text}</Feedback> : null}
+      {isOS ? (
+        <Card className="grid gap-2 p-4">
+          <span className="text-[13px] font-semibold">{t("Status do atendimento")}</span>
+          <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label={t("Status")}>
+            {STATUS_OPCOES.map((s) => {
+              const ativo = form.status === s.value;
+              return (
+                <button
+                  key={s.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={ativo}
+                  onClick={() => mudarStatus(s.value)}
+                  className={cn(
+                    "flex h-10 items-center gap-1.5 rounded-lg border px-2.5 text-left text-[13px] font-medium",
+                    s.value === "aguardando_pagamento" && "col-span-2",
+                    ativo
+                      ? cn(OS_STATUS[s.value].className, "border-current")
+                      : "border-border text-ink-muted hover:bg-surface-muted",
+                  )}
+                >
+                  <i className={cn("size-2 shrink-0 rounded-full", ativo ? "bg-current" : "bg-border-control")} />
+                  {t(s.label)}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      ) : null}
       {form.id ? <PdfActions tipo={mode} id={form.id} numero={form.numero} /> : null}
       {form.id ? <WhatsappButton tipo={mode} id={form.id} className="mb-1" /> : null}
       {isOS ? (
         <>
           {!finalizado ? (
-            <Button variant="dark" onClick={finalizar} disabled={pending} icon={<CheckCircle2 />}>
+            <Button variant="success" onClick={finalizar} disabled={pending} icon={<CheckCircle2 />}>
               {t("Finalizar OS")}
             </Button>
           ) : null}
@@ -232,7 +278,7 @@ export function DocumentoForm({
               {t("Já virou o atendimento OS {n} →", { n: docNumber(osGerada.numero) })}
             </Link>
           ) : (
-            <Button variant="outline" onClick={transformar} disabled={pending}>
+            <Button variant="successSoft" onClick={transformar} disabled={pending}>
               {t("Transformar em atendimento")}
             </Button>
           )}
@@ -251,6 +297,7 @@ export function DocumentoForm({
         >
           <ArrowLeft className="size-4" />
         </Link>
+        <TitleIcon icon={isOS ? Wrench : FileText} />
         <div className="min-w-0 flex-1">
           <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.02em] lg:text-[28px] lg:leading-[34px]">
             {titulo}
@@ -325,34 +372,7 @@ export function DocumentoForm({
               </div>
               {isOS ? (
                 <>
-                  <div className="sm:col-span-2">
-                    <Field label={t("Status")} htmlFor="doc-status">
-                      <Select
-                        id="doc-status"
-                        value={form.status}
-                        onChange={(e) => {
-                          const status = e.target.value as DocForm["status"];
-                          // Regra: Finalizado já conta como recebido hoje (pode ajustar na seção Recebimento).
-                          if (status === "finalizado" && !form.recebido) {
-                            set({
-                              status,
-                              recebido: true,
-                              valor_recebido: form.valor_recebido ?? tot.total,
-                              data_recebimento: fmt.today(),
-                              data_entrega: form.data_entrega || fmt.today(),
-                            });
-                          } else set({ status });
-                        }}
-                      >
-                        {STATUS_OPCOES.map((s) => (
-                          <option key={s.value} value={s.value}>
-                            {t(s.label)}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                  </div>
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-4">
                     <Field label={t("Data da entrega")} htmlFor="doc-entrega" hint={t("Vazia: preenche ao finalizar")}>
                       <Input
                         id="doc-entrega"
@@ -793,8 +813,18 @@ export function DocumentoForm({
         <aside className="grid gap-4 lg:sticky lg:top-6">
           <Card className="grid gap-2.5 p-5">
             <h2 className="mb-1 text-sm font-semibold">{t("Resumo")}</h2>
-            <Linha label={t("Serviços ({n})", { n: form.servicos_ativos ? form.servicos.length : 0 })} valor={tot.servicos} apagado={form.valor_total_manual} />
-            <Linha label={t("Produtos ({n})", { n: form.produtos_ativos ? form.produtos.length : 0 })} valor={tot.produtos} apagado={form.valor_total_manual} />
+            <LinhaItens
+              label={t("Serviços ({n})", { n: form.servicos_ativos ? form.servicos.length : 0 })}
+              valor={tot.servicos}
+              apagado={form.valor_total_manual}
+              itens={form.servicos_ativos ? form.servicos : []}
+            />
+            <LinhaItens
+              label={t("Produtos ({n})", { n: form.produtos_ativos ? form.produtos.length : 0 })}
+              valor={tot.produtos}
+              apagado={form.valor_total_manual}
+              itens={form.produtos_ativos ? form.produtos : []}
+            />
             {tot.frete ? <Linha label={t("Frete")} valor={tot.frete} apagado={form.valor_total_manual} /> : null}
             <div className="flex items-center justify-between gap-2 text-sm text-ink-muted">
               <Switch checked={form.cobrar_visita} onChange={(v) => set({ cobrar_visita: v })} label={t("Visita técnica")} />
@@ -805,11 +835,19 @@ export function DocumentoForm({
             {form.cobrar_visita ? (
               <MoneyInput aria-label={t("Valor da visita")} value={form.valor_visita} onChange={(v) => set({ valor_visita: v })} />
             ) : null}
+            <div className="flex justify-between gap-2 border-t border-dashed border-border pt-2.5 text-sm text-ink-muted">
+              {t("Subtotal")}
+              <strong className={cn("font-semibold tabular-nums", form.valor_total_manual ? "text-ink-subtle" : "text-ink")}>
+                {money(tot.subtotal)}
+              </strong>
+            </div>
             {tot.desconto ? (
               <div className="flex justify-between gap-2 text-sm text-ink-muted">
-                {t("Desconto")}
-                {form.desconto_tipo === "percentual" ? ` (${fmt.number(form.desconto_valor, 2)}%)` : ""}
-                <strong className={cn("font-medium tabular-nums", form.valor_total_manual ? "text-ink-subtle" : "text-success")}>
+                <span>
+                  {t("Desconto")}
+                  {form.desconto_tipo === "percentual" ? ` (${fmt.number(form.desconto_valor, 2)}%)` : ""}
+                </span>
+                <strong className={cn("font-semibold tabular-nums", form.valor_total_manual ? "text-ink-subtle" : "text-danger")}>
                   − {money(tot.desconto)}
                 </strong>
               </div>
@@ -842,7 +880,7 @@ export function DocumentoForm({
                 </div>
                 <div className="flex justify-between text-[13px] text-ink-muted">
                   {t("Recebido")}
-                  <strong className="font-medium text-ink tabular-nums">{money(form.valor_recebido ?? tot.total)}</strong>
+                  <strong className="font-semibold text-success tabular-nums">{money(form.valor_recebido ?? tot.total)}</strong>
                 </div>
               </>
             ) : null}
@@ -911,6 +949,43 @@ function Linha({ label, valor, apagado }: { label: string; valor: number; apagad
     <div className="flex justify-between gap-2 text-sm text-ink-muted">
       {label}
       <strong className={cn("font-medium tabular-nums", apagado ? "text-ink-subtle" : "text-ink")}>{fmt.money(valor)}</strong>
+    </div>
+  );
+}
+
+/** Linha do resumo que abre a lista de itens (nome e valor de cada um). */
+function LinhaItens({ label, valor, apagado, itens }: { label: string; valor: number; apagado: boolean; itens: ItemForm[] }) {
+  const { fmt } = useI18n();
+  const [aberto, setAberto] = useState(false);
+  const comItens = itens.filter((i) => i.descricao.trim());
+  return (
+    <div className="grid gap-1.5">
+      <button
+        type="button"
+        disabled={comItens.length === 0}
+        onClick={() => setAberto((a) => !a)}
+        aria-expanded={aberto}
+        className="flex items-center justify-between gap-2 text-left text-sm text-ink-muted disabled:cursor-default"
+      >
+        <span className="flex items-center gap-1">
+          {comItens.length ? <ChevronDown className={cn("size-4 transition-transform", aberto && "rotate-180")} /> : null}
+          {label}
+        </span>
+        <strong className={cn("font-medium tabular-nums", apagado ? "text-ink-subtle" : "text-ink")}>{fmt.money(valor)}</strong>
+      </button>
+      {aberto && comItens.length ? (
+        <ul className="grid gap-1 rounded-lg bg-surface-muted px-3 py-2 text-[13px]">
+          {comItens.map((i) => (
+            <li key={i.key} className="flex justify-between gap-3">
+              <span className="min-w-0 truncate text-ink-muted">
+                {i.quantidade !== 1 ? `${fmt.number(i.quantidade, 2)}× ` : ""}
+                {i.descricao}
+              </span>
+              <span className="shrink-0 tabular-nums">{fmt.money(i.quantidade * i.valor_unitario)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

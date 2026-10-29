@@ -20,6 +20,8 @@ import type { Enums } from "@/lib/database.types";
 import { STATUS_OPCOES } from "@/lib/documento";
 import { docNumber } from "@/lib/format";
 import { CATEGORIA_LABEL } from "@/lib/labels";
+import { VALOR_COR } from "@/lib/status";
+import { cn } from "@/lib/utils";
 import { excluirAtendimentos } from "./actions";
 
 export type OsLinha = {
@@ -49,6 +51,7 @@ export function ServicosList({
   filtros,
   algumaOs,
   porPagina,
+  verId = null,
 }: {
   linhas: OsLinha[];
   recentes: OsLinha[];
@@ -58,6 +61,8 @@ export function ServicosList({
   filtros: Filtros;
   algumaOs: boolean;
   porPagina: number;
+  /** OS para abrir já na janela de visualização (ex.: logo depois de Finalizar OS). */
+  verId?: string | null;
 }) {
   const { t, fmt } = useI18n();
   const { date, money, relativeDays } = fmt;
@@ -72,6 +77,10 @@ export function ServicosList({
 
   const somaTodos = Object.values(contagens).reduce((a, b) => a + b, 0);
   const paginas = Math.max(1, Math.ceil(totalFiltrado / porPagina));
+
+  useEffect(() => {
+    if (verId) abrir({ tipo: "os", id: verId });
+  }, [verId, abrir]);
 
   // Troca de página ou de filtro: limpa a seleção.
   useEffect(() => setSelected(new Set()), [linhas]);
@@ -117,7 +126,8 @@ export function ServicosList({
   return (
     <>
       <PageHeader
-        title={t("Serviços Prestados")}
+        icon={Wrench}
+        title={t("Atendimentos")}
         description={
           semFiltro
             ? `${somaTodos === 1 ? t("1 atendimento") : t("{n} atendimentos", { n: somaTodos })} · ${t("{n} em andamento", { n: contagens.em_andamento })}`
@@ -149,7 +159,7 @@ export function ServicosList({
                 <span className="line-clamp-1 text-xs text-ink-subtle">{o.servicos.join(", ") || o.relato || "—"}</span>
                 <span className="mt-auto flex items-center justify-between gap-2">
                   <StatusBadge status={o.status} />
-                  <span className="text-sm font-semibold tabular-nums">{money(o.valor_total, { noCents: true })}</span>
+                  <span className={cn("text-sm font-semibold tabular-nums", VALOR_COR[o.status])}>{money(o.valor_total, { noCents: true })}</span>
                 </span>
               </button>
             ))}
@@ -253,7 +263,7 @@ export function ServicosList({
                       <StatusBadge status={o.status} />
                     </td>
                     <td className="px-4 py-3 text-ink-muted tabular-nums">{date(o.data_inicio)}</td>
-                    <td className="px-4 py-3 text-right font-medium tabular-nums">{money(o.valor_total)}</td>
+                    <td className={cn("px-4 py-3 text-right font-semibold tabular-nums", VALOR_COR[o.status])}>{money(o.valor_total)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -270,7 +280,7 @@ export function ServicosList({
                   <button type="button" onClick={() => abrir({ tipo: "os", id: o.id })} className="min-w-0 flex-1 text-left">
                     <span className="flex justify-between gap-2">
                       <span className="truncate font-medium">{o.cliente ?? t("Cliente não definido")}</span>
-                      <span className="shrink-0 font-medium tabular-nums">{money(o.valor_total)}</span>
+                      <span className={cn("shrink-0 font-semibold tabular-nums", VALOR_COR[o.status])}>{money(o.valor_total)}</span>
                     </span>
                     <span className="mt-1 flex items-center gap-2 text-xs text-ink-subtle">
                       <span className="font-mono">{docNumber(o.numero)}</span>

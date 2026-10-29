@@ -41,6 +41,14 @@
   --return: #6a3aa8;
   --return-bg: #f1e9fb;
   --chart-compare: #c3d1c9;
+  /* Cores de apoio (categorias, valores, etiquetas) */
+  --orange: #b04a0b;
+  --orange-bg: #fdebdc;
+  --teal: #0b6e75;
+  --teal-bg: #dcf3f4;
+  --pink: #a8326e;
+  --pink-bg: #fbe6f0;
+  --danger-solid: #c0362c;
 
   --td-shadow-card: 0 1px 2px rgba(15, 26, 20, 0.05);
   --td-shadow-pop: 0 16px 40px rgba(15, 26, 20, 0.14);
@@ -83,6 +91,13 @@
   --return: #c8a6f5;
   --return-bg: #2c2040;
   --chart-compare: #3a4a41;
+  --orange: #ffad73;
+  --orange-bg: #3d2210;
+  --teal: #6fd6dc;
+  --teal-bg: #12363a;
+  --pink: #f59cc6;
+  --pink-bg: #3d1729;
+  --danger-solid: #d0473c;
 
   --td-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --td-shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.55);
@@ -126,6 +141,13 @@
   --color-return: var(--return);
   --color-return-bg: var(--return-bg);
   --color-chart-compare: var(--chart-compare);
+  --color-orange: var(--orange);
+  --color-orange-bg: var(--orange-bg);
+  --color-teal: var(--teal);
+  --color-teal-bg: var(--teal-bg);
+  --color-pink: var(--pink);
+  --color-pink-bg: var(--pink-bg);
+  --color-danger-solid: var(--danger-solid);
 
   --shadow-card: var(--td-shadow-card);
   --shadow-pop: var(--td-shadow-pop);

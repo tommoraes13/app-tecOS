@@ -51,11 +51,11 @@ export function WhatsappButton({ tipo, id, className }: { tipo: "os" | "orcament
         type="button"
         onClick={abrir}
         className={cn(
-          "inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-muted",
+          "inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-full bg-success-bg px-3 text-[13px] font-medium text-success hover:opacity-90",
           className,
         )}
       >
-        <MessageCircle className="size-4 text-brand-ink" />
+        <MessageCircle className="size-4" />
         {t("Mensagem para WhatsApp")}
       </button>
 

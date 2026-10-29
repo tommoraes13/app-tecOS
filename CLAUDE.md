@@ -9,7 +9,7 @@
 
 ## Produto
 
-Sistema para técnicos de informática autônomos. 1 login = 1 técnico = 1 negócio. Telas: Dashboard, Minha Agenda, Orçamentos, Serviços Prestados, Clientes, Meu Negócio, Minha Conta. A Tabela de Preços entra no menu só quando for construída.
+Sistema para técnicos de informática autônomos. 1 login = 1 técnico = 1 negócio. Telas: Dashboard, Minha Agenda, Orçamentos, Atendimentos (antiga Serviços Prestados, rota /servicos), Clientes, Cadastros (Serviços, Produtos, Templates), Precificação, Meu Negócio, Minha Conta, Meu Plano.
 
 Regras fechadas na Fase 1:
 - Status da OS: Em andamento (padrão), Pendente, Aguardando Pagamento, Finalizado, Retorno. Pendente e Retorno são manuais.
@@ -19,12 +19,17 @@ Regras fechadas na Fase 1:
 - Senhas dos equipamentos: criptografadas no servidor (AES-256) com `EQUIPMENT_SECRET_KEY`; mascaradas com botões mostrar/copiar.
 - CEP preenche o endereço pelo ViaCEP. Distância é manual nesta versão.
 - PDF: só OS e orçamento por enquanto.
+- Status Finalizado conta como recebido (data de hoje), pela tela e por gatilho no banco.
+- Categorias de serviço: Manutenção, Diagnóstico/Revisão, Montagem, Configuração, Backup e Recuperação, Consultoria, Outros.
+- Idiomas: pt-BR (padrão), en, es. O texto em português é a chave de t(); traduções em src/i18n/messages.
 
 ## Design System
 
 - Tokens em `src/app/globals.css` (`:root` e `.dark`), expostos como classes: `bg-surface`, `text-ink-muted`, `border-border-control`, `bg-brand-gradient`…
 - Botão com degradê (`variant="cta"`) no máximo um por tela. Formulários concluem com `variant="dark"`.
-- Seções de formulário começam fechadas e abrem com switch. Criar = modal centralizado; ver detalhes = painel lateral à direita.
+- Seções de formulário começam fechadas e abrem com switch. Criar = modal centralizado; ver detalhes = janela central só de leitura (useViewer) com botão Editar.
+- Cores de apoio além do verde: status da OS e categorias de serviço têm cor própria; valores recebidos em verde, a receber em amarelo, desconto em vermelho.
+- Valores (constantes) usados no servidor não podem vir de arquivos "use client".
 - Celular: menu hambúrguer, controles com 44px de altura, modais em tela cheia, tabelas viram lista de cards.
 - Textos: "você", sem emoji, sem exclamação (exceto a saudação), R$ 1.250,00, 28/10/2026, OS 00042.
 

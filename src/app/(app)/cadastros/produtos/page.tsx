@@ -1,3 +1,4 @@
+import { Package } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { CatalogoProdutos } from "./catalogo-produtos";
@@ -12,6 +13,7 @@ export default async function CadastroProdutosPage({ searchParams }: { searchPar
   return (
     <>
       <PageHeader
+        icon={Package}
         title={t("Cadastro de Produtos")}
         description={t("Peças e itens que você vende, com custo e preço de venda. Aparecem para escolher na OS e no orçamento.")}
       />

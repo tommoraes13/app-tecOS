@@ -36,6 +36,11 @@ jobs:
             npm run build 2>&1 | tee build.log || status=1
           fi
           if [ $status -eq 0 ]; then
+            # A rota do PDF precisa levar as fontes padrão no pacote (sem elas o PDF falha na Vercel).
+            f=$(find .next/server/app/api/pdf -name "route.js.nft.json" | head -1)
+            if ! grep -q "standard-fonts" "$f"; then echo "Fontes do PDF fora do pacote da rota ($f)" | tee -a build.log; status=1; fi
+          fi
+          if [ $status -eq 0 ]; then
             # Carrega como ESM, igual ao servidor do Next.
             npm pkg set type=module
             npx --yes tsx@4 --tsconfig scripts/tsconfig.teste.json scripts/teste-pdf.tsx teste-os.pdf 2>&1 | tee pdf.log || status=1

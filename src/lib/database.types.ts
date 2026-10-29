@@ -880,11 +880,11 @@ export type Database = {
       equipamento_tipo: "desktop" | "notebook" | "rede" | "impressora"
       os_status: "em_andamento" | "pendente" | "aguardando_pagamento" | "finalizado" | "retorno"
       servico_categoria:
-        | "manutencao_corretiva"
-        | "manutencao_preventiva"
-        | "montagem_pc"
+        | "manutencao"
+        | "diagnostico_revisao"
+        | "montagem"
+        | "configuracao"
         | "backup_recuperacao"
-        | "redes_impressoras"
         | "consultoria"
         | "outros"
     }

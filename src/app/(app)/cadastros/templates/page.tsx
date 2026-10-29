@@ -10,7 +10,7 @@ export default async function CadastroTemplatesPage() {
   const { t } = await getI18n();
   return (
     <>
-      <PageHeader title={t("Cadastro de Templates")} description={t("Checklists, sequências de atendimento e outros modelos.")} />
+      <PageHeader icon={ListChecks} title={t("Cadastro de Templates")} description={t("Checklists, sequências de atendimento e outros modelos.")} />
       <Card>
         <EmptyState
           icon={ListChecks}

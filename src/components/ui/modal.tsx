@@ -189,7 +189,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={pending}
-            className="inline-flex h-11 items-center rounded-full bg-danger-bg px-4 text-sm font-medium text-danger disabled:opacity-45 lg:h-10"
+            className="inline-flex h-11 items-center rounded-full bg-danger-solid px-4 text-sm font-medium text-white disabled:opacity-45 lg:h-10"
           >
             {pending ? t("Aguarde…") : (confirmLabel ?? t("Excluir"))}
           </button>

@@ -1,3 +1,4 @@
+import { Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { EmpresaForm } from "./empresa-form";
@@ -10,7 +11,7 @@ export default async function MeuNegocioPage() {
   const [{ data: negocio }, { t }] = await Promise.all([supabase.from("meu_negocio").select("*").maybeSingle(), getI18n()]);
   return (
     <>
-      <PageHeader title={t("Meu Negócio")} description={t("Dados da empresa que saem nos PDFs e a garantia padrão.")} />
+      <PageHeader icon={Briefcase} title={t("Meu Negócio")} description={t("Dados da empresa que saem nos PDFs e a garantia padrão.")} />
       {negocio ? (
         <EmpresaForm negocio={negocio} />
       ) : (

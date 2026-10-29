@@ -94,7 +94,7 @@ export function EquipamentoModal({
       footer={
         <>
           {equipamento && onDeleted ? (
-            <Button variant="danger" onClick={remove} disabled={pending} className="mr-auto">
+            <Button variant={confirmDelete ? "dangerSolid" : "danger"} onClick={remove} disabled={pending} className="mr-auto">
               {confirmDelete ? t("Confirmar exclusão") : t("Excluir")}
             </Button>
           ) : null}

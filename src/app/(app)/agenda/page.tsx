@@ -37,6 +37,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader
+        icon={CalendarDays}
         title={t("Minha Agenda")}
         description={
           proximas.length === 1

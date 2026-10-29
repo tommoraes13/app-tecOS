@@ -13,7 +13,6 @@ export type ServicoInput = {
   localizacao_pastas: string;
   valor: number;
   tempo_medio_min: number | null;
-  tipo_equipamento: string;
 };
 
 export async function salvarServico(input: ServicoInput): Promise<ActionResult<{ id: string }>> {
@@ -29,7 +28,6 @@ export async function salvarServico(input: ServicoInput): Promise<ActionResult<{
       localizacao_pastas: isBackup ? txt(input.localizacao_pastas) : null,
       valor: num(input.valor),
       tempo_medio_min: numOrNull(input.tempo_medio_min),
-      tipo_equipamento: txt(input.tipo_equipamento),
     };
     const query = input.id
       ? supabase.from("cadastro_servicos").update(row).eq("id", input.id).select("id").single()

@@ -18,7 +18,7 @@ const TELAS = [
   { href: "/agenda", label: "Minha Agenda", palavras: "agenda calendario visitas horarios" },
   { href: "/orcamentos", label: "Orçamentos", palavras: "orcamentos propostas" },
   { href: "/orcamentos/novo", label: "Novo orçamento", palavras: "criar orcamento proposta" },
-  { href: "/servicos", label: "Serviços Prestados", palavras: "servicos atendimentos os ordens" },
+  { href: "/servicos", label: "Atendimentos", palavras: "servicos prestados atendimentos os ordens" },
   { href: "/servicos/novo", label: "Novo atendimento", palavras: "criar atendimento os ordem servico" },
   { href: "/clientes", label: "Clientes", palavras: "clientes contatos" },
   { href: "/cadastros/servicos", label: "Cadastro de Serviços", palavras: "cadastro servicos catalogo precos" },

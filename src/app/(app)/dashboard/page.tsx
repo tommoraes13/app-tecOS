@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Trophy, Wrench } from "lucide-react";
+import { Moon, Plus, Sun, Sunset, Trophy, Wrench } from "lucide-react";
 import { ViewerLink } from "@/components/detalhes/viewer";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
@@ -11,6 +11,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { intervalo, lerResumo, PERIODOS, periodoValido, variacao } from "@/lib/dashboard";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getI18n } from "@/i18n/server";
+import { VALOR_COR } from "@/lib/status";
 import { docNumber } from "@/lib/format";
 import { getPerfil } from "@/lib/perfil";
 import { createClient } from "@/lib/supabase/server";
@@ -64,6 +65,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader
+        icon={{ morning: Sun, afternoon: Sunset, evening: Moon }[fmt.dayPart()]}
         title={`${saudacao}${nome ? `, ${nome}` : ""}!`}
         description={t("{inicio} a {fim}", { inicio: fmt.date(m.r.inicio), fim: fmt.date(m.r.fim) })}
         actions={
@@ -103,11 +105,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         />
         <StatCard
           label={t("Valores a receber")}
+          valueClassName={m.aReceber > 0 ? "text-warning" : undefined}
           value={money(m.aReceber, { noCents: m.aReceber >= 1000 })}
           rows={[{ label: m.aReceberQtd === 1 ? t("1 atendimento") : t("{n} atendimentos", { n: m.aReceberQtd }), value: "" }]}
         />
         <StatCard
           label={t("Atendimentos em aberto")}
+          valueClassName={m.emAberto > 0 ? "text-info" : undefined}
           value={String(m.emAberto)}
           rows={[{ label: t("Pendentes"), value: String(m.pendentes) }]}
         />
@@ -148,7 +152,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-sm font-medium tabular-nums">{money(o.valor_total)}</span>
+                      <span className={`text-sm font-semibold tabular-nums ${VALOR_COR[o.status]}`}>{money(o.valor_total)}</span>
                       <StatusBadge status={o.status} />
                     </span>
                   </ViewerLink>
