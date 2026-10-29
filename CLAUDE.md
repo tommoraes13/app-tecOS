@@ -32,7 +32,15 @@ Regras fechadas na Fase 1:
 
 - App em produção: https://app-tec-os.vercel.app (Vercel, publica a cada envio para `main`).
 - Supabase: projeto **TecOS-v1** (`ytpvbfgzuwvmktqcoucq`, região São Paulo). O outro projeto da organização não pertence ao app: não mexer.
-- Scripts do banco em `supabase/migrations/`, na ordem em que foram aplicados.
+- Scripts do banco em `supabase/migrations/`, na ordem em que foram aplicados. Mudança no banco: mostrar o SQL ao dono e aplicar só com aprovação; depois regerar `src/lib/database.types.ts`.
+- `EQUIPMENT_SECRET_KEY` fica só na Vercel. Nunca trocar a chave: as senhas salvas deixariam de abrir.
+
+## Fluxo de trabalho
+
+1. Trabalhar na branch `dev` e enviar para o GitHub.
+2. A verificação automática (`.github/workflows/verificar.yml`) roda tipos, build e um PDF de exemplo, inclusive dentro do servidor do Next. Acompanhar com `scripts/ci-status.sh dev`, que mostra os erros quando falha.
+3. Verde: mesclar em `main` (fast-forward). A Vercel publica sozinha.
+4. O PDF de exemplo da última verificação fica na branch `ci-artefatos` (`teste-os.pdf`).
 
 ## Código
 
