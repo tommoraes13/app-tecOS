@@ -13,10 +13,13 @@ import { todayISO } from "@/lib/format";
 
 type Client = SupabaseClient<Database>;
 
-/** Clientes, catálogos e padrões do Meu Negócio, usados pelos formulários de OS e orçamento. */
-export async function carregarApoio(supabase: Client) {
+/** Cliente escolhido (ou os primeiros), catálogos e padrões do Meu Negócio, usados pelos formulários de OS e orçamento. */
+export async function carregarApoio(supabase: Client, clienteId?: string | null) {
+  // Clientes: só o já escolhido; os demais são buscados conforme você digita.
   const [cl, sv, pr, mn, nm] = await Promise.all([
-    supabase.from("base_clientes").select("id, nome, telefone, bairro, cidade").order("nome"),
+    clienteId
+      ? supabase.from("base_clientes").select("id, nome, telefone, bairro, cidade").eq("id", clienteId)
+      : supabase.rpc("buscar_clientes", { p_q: "", p_limite: 20 }),
     supabase.from("cadastro_servicos").select("id, nome, codigo, valor, tempo_medio_min").eq("ativo", true).order("nome"),
     supabase.from("cadastro_produtos").select("id, nome, codigo, valor_venda").eq("ativo", true).order("nome"),
     supabase.from("meu_negocio").select("valor_visita, duracao_visita_min, cobrar_visita, garantia_meses_padrao").maybeSingle(),
@@ -209,4 +212,11 @@ export function aplicarTempos(form: DocForm, servicos: CatalogoServico[]): DocFo
     ...form,
     servicos: form.servicos.map((i) => (i.catalogId ? { ...i, tempo_min: tempos.get(i.catalogId) ?? null } : i)),
   };
+}
+
+/** Garante que o cliente do documento esteja na lista inicial do campo Cliente. */
+export async function comCliente(supabase: Client, lista: ClienteOpcao[], clienteId: string | null): Promise<ClienteOpcao[]> {
+  if (!clienteId || lista.some((c) => c.id === clienteId)) return lista;
+  const { data } = await supabase.from("base_clientes").select("id, nome, telefone, bairro, cidade").eq("id", clienteId).maybeSingle();
+  return data ? [data as ClienteOpcao, ...lista] : lista;
 }

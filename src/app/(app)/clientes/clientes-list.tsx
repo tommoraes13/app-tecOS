@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Filter, Plus, Users } from "lucide-react";
 import { ClienteModal } from "@/components/clientes/cliente-modal";
+import { useViewer } from "@/components/detalhes/viewer";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,6 @@ import { useI18n } from "@/i18n/client";
 import { normalize, phone } from "@/lib/format";
 import { CANAL_LABEL } from "@/lib/labels";
 import { excluirClientes } from "./actions";
-import { ClienteDrawer } from "./cliente-drawer";
 
 export type ClienteResumo = Tables<"clientes_resumo">;
 type Cliente = Tables<"base_clientes">;
@@ -98,13 +98,16 @@ export function ClientesList({
   const [situacao, setSituacao] = useState<"" | "garantia" | "com" | "sem">("");
   const garantia = useMemo(() => new Set(emGarantia), [emGarantia]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [openId, setOpenId] = useState<string | null>(abrirId);
+  const { abrir } = useViewer();
   const [modal, setModal] = useState<{ cliente: Cliente | null } | null>(null);
   const [confirm, setConfirm] = useState<string[] | null>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => setOpenId(abrirId), [abrirId]);
+  // Link vindo de outra tela (?abrir=<id>): abre a janela do cliente.
+  useEffect(() => {
+    if (abrirId) abrir({ tipo: "cliente", id: abrirId });
+  }, [abrirId, abrir]);
 
   const list = useMemo(() => {
     const term = normalize(q);
@@ -122,15 +125,12 @@ export function ClientesList({
     });
   }, [clientes, q, canal, situacao, garantia]);
 
-  const aberto = clientes.find((c) => c.id === openId) ?? null;
-
   function remove(ids: string[]) {
     start(async () => {
       const r = await excluirClientes(ids);
       if (!r.ok) return setError(t(r.error));
       setConfirm(null);
       setSelected(new Set());
-      if (openId && ids.includes(openId)) setOpenId(null);
       router.refresh();
     });
   }
@@ -243,7 +243,7 @@ export function ClientesList({
                 {list.map((c) => (
                   <tr
                     key={c.id}
-                    onClick={() => setOpenId(c.id)}
+                    onClick={() => c.id && abrir({ tipo: "cliente", id: c.id })}
                     className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-muted"
                   >
                     <td className="py-3 pl-4" onClick={(e) => e.stopPropagation()}>
@@ -279,7 +279,7 @@ export function ClientesList({
                     checked={selected.has(c.id ?? "")}
                     onChange={() => setSelected((s) => toggleId(s, c.id ?? ""))}
                   />
-                  <button type="button" onClick={() => setOpenId(c.id)} className="min-w-0 flex-1 text-left">
+                  <button type="button" onClick={() => c.id && abrir({ tipo: "cliente", id: c.id })} className="min-w-0 flex-1 text-left">
                     <span className="flex justify-between gap-2">
                       <span className="truncate font-medium">{c.nome}</span>
                       <span className="shrink-0 text-xs text-ink-subtle tabular-nums">
@@ -306,23 +306,13 @@ export function ClientesList({
         />
       </Card>
 
-      <ClienteDrawer
-        cliente={aberto}
-        onClose={() => setOpenId(null)}
-        onEdit={(c) => setModal({ cliente: c })}
-        onDelete={(id) => {
-          setError(null);
-          setConfirm([id]);
-        }}
-      />
-
       <ClienteModal
         open={modal !== null}
         cliente={modal?.cliente ?? null}
         onClose={() => setModal(null)}
         onSaved={(c) => {
           setModal(null);
-          setOpenId(c.id);
+          abrir({ tipo: "cliente", id: c.id });
           router.refresh();
         }}
       />

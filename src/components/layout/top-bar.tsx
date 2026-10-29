@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, ChevronDown, CircleHelp, CreditCard, LogOut, Moon, UserRound } from "lucide-react";
+import { ChevronDown, CircleHelp, CreditCard, LogOut, Moon, UserRound } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/controls";
 import { Popover } from "@/components/ui/popover";
+import { Notificacoes } from "./notificacoes";
 import { useI18n } from "@/i18n/client";
 import { initials } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
@@ -78,21 +79,7 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
         )}
       </Popover>
 
-      <Popover
-        label={t("Notificações")}
-        trigger={({ toggle }) => (
-          <button type="button" onClick={toggle} aria-label={t("Notificações")} className={cn(iconBtn, compact && "size-9")}>
-            <Bell className="size-4" />
-          </button>
-        )}
-      >
-        {() => (
-          <div className="p-3">
-            <p className="text-sm font-semibold">{t("Notificações")}</p>
-            <p className="mt-1 text-[13px] text-ink-subtle">{t("Nenhuma notificação por enquanto.")}</p>
-          </div>
-        )}
-      </Popover>
+      <Notificacoes className={cn(iconBtn, compact && "size-9")} />
 
       <Popover
         label={t("Conta")}

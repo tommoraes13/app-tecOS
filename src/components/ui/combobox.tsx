@@ -22,6 +22,8 @@ export function Combobox({
   emptyText,
   id,
   autoFocus,
+  commitOnBlur = false,
+  onQueryChange,
 }: {
   items: ComboItem[];
   valueLabel: string;
@@ -32,6 +34,10 @@ export function Combobox({
   emptyText?: string;
   id?: string;
   autoFocus?: boolean;
+  /** Ao sair do campo sem escolher, usa o texto digitado como item avulso (onFree). */
+  commitOnBlur?: boolean;
+  /** Avisa o texto digitado, para buscar os itens no banco (a lista vem por `items`). */
+  onQueryChange?: (q: string) => void;
 }) {
   const { t } = useI18n();
   const listId = useId();
@@ -39,6 +45,10 @@ export function Combobox({
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const qRef = useRef("");
+  const escolheuRef = useRef(false);
+  qRef.current = q;
 
   useEffect(() => {
     if (!open) return;
@@ -59,6 +69,7 @@ export function Combobox({
   const total = filtered.length + (showFree ? 1 : 0);
 
   function choose(index: number) {
+    escolheuRef.current = true;
     if (index < filtered.length) onSelect(filtered[index]);
     else if (showFree) onFree?.(q.trim());
     setOpen(false);
@@ -71,6 +82,7 @@ export function Combobox({
         <Search className="size-4 shrink-0 text-ink-subtle" />
         <input
           id={id}
+          ref={inputRef}
           autoFocus={autoFocus}
           role="combobox"
           aria-expanded={open}
@@ -79,12 +91,26 @@ export function Combobox({
           value={open ? q : valueLabel}
           placeholder={valueLabel || placeholder || t("Buscar")}
           onFocus={() => {
+            escolheuRef.current = false;
             setOpen(true);
             setQ("");
+            onQueryChange?.("");
             setActive(0);
+          }}
+          onBlur={() => {
+            if (!commitOnBlur || !onFree) return;
+            // Espera o clique numa opção da lista acontecer antes de decidir.
+            window.setTimeout(() => {
+              const texto = qRef.current.trim();
+              if (escolheuRef.current || !texto || document.activeElement === inputRef.current) return;
+              if (texto !== valueLabel) onFree(texto);
+              setOpen(false);
+              setQ("");
+            }, 150);
           }}
           onChange={(e) => {
             setQ(e.target.value);
+            onQueryChange?.(e.target.value);
             setOpen(true);
             setActive(0);
           }}

@@ -172,3 +172,20 @@ export function resumoEquipamento(tipo: TipoEquipamento, specs: Specs, t: (s: st
           : [s("marca"), s("modelo")];
   return parts.filter(Boolean).join(" · ");
 }
+
+/**
+ * Ficha resumida da máquina para listas (ex.: na OS):
+ * "Ryzen 7 5700X · 16 GB · SSD 480 GB · RTX 3060 · Windows 11".
+ */
+export function fichaEquipamento(tipo: TipoEquipamento, specs: Specs, t: (s: string) => string = (s) => s) {
+  const s = (k: string) => (typeof specs[k] === "string" ? (specs[k] as string).trim() : "");
+  const partes =
+    tipo === "desktop"
+      ? [s("processador"), s("memoria"), s("disco1"), s("gpu"), s("so")]
+      : tipo === "notebook"
+        ? [s("modelo"), s("processador"), s("memoria"), s("disco1"), s("so")]
+        : tipo === "rede"
+          ? [s("subtipo") && t(s("subtipo")), s("provedor") && t(s("provedor")), s("ssid_24")]
+          : [[s("marca"), s("modelo")].filter(Boolean).join(" "), s("tinta") && t(s("tinta")), s("conexao") && t(s("conexao"))];
+  return partes.filter(Boolean).join(" · ");
+}

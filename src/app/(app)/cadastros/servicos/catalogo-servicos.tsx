@@ -47,12 +47,16 @@ function toInput(s: Servico): ServicoInput {
 
 const TIPOS_EQUIPAMENTO = Object.values(EQUIPAMENTO_CURTO);
 
-export function CatalogoServicos({ servicos }: { servicos: Servico[] }) {
+export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servico[]; abrirId?: string | null }) {
   const { t, fmt } = useI18n();
   const router = useRouter();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [editing, setEditing] = useState<ServicoInput | null>(null);
+  // Vindo da busca (?abrir=<id>): já abre o serviço para editar.
+  const [editing, setEditing] = useState<ServicoInput | null>(() => {
+    const s = abrirId ? servicos.find((x) => x.id === abrirId) : null;
+    return s ? toInput(s) : null;
+  });
   const [confirm, setConfirm] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);

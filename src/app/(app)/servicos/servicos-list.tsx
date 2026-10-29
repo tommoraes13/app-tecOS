@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Wrench } from "lucide-react";
-import { PdfActions } from "@/components/documento/pdf-actions";
-import { WhatsappButton } from "@/components/documento/whatsapp-button";
+import { ChevronLeft, ChevronRight, Loader2, Plus, Wrench } from "lucide-react";
+import { useViewer } from "@/components/detalhes/viewer";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -13,72 +11,96 @@ import { Card } from "@/components/ui/card";
 import { Checkbox, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import { SelectionBar, toggleId } from "@/components/ui/list-toolbar";
-import { ConfirmDialog, Drawer } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/modal";
 import { SearchInput } from "@/components/ui/search-input";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { OS_STATUS } from "@/lib/status";
 import { PillTabs } from "@/components/ui/tabs";
+import { useI18n } from "@/i18n/client";
 import type { Enums } from "@/lib/database.types";
 import { STATUS_OPCOES } from "@/lib/documento";
-import { useI18n } from "@/i18n/client";
-import { docNumber, normalize, phone, whatsappLink } from "@/lib/format";
+import { docNumber } from "@/lib/format";
 import { CATEGORIA_LABEL } from "@/lib/labels";
-import { alterarStatus, excluirAtendimentos } from "./actions";
+import { excluirAtendimentos } from "./actions";
+
+/** Quantas OS aparecem por página. */
+export const POR_PAGINA = 50;
 
 export type OsLinha = {
   id: string;
   numero: number;
   status: Enums<"os_status">;
   data_inicio: string;
-  data_entrega: string | null;
   valor_total: number;
-  valor_recebido: number | null;
-  recebido: boolean;
-  data_recebimento: string | null;
-  cliente_id: string | null;
-  relato: string | null;
   cliente: string | null;
-  telefone: string | null;
+  relato: string | null;
   servicos: string[];
-  categorias: string[];
 };
 
 type Aba = Enums<"os_status"> | "todos";
+export type Filtros = { aba: Aba; q: string; de: string; ate: string; cat: string };
 
-export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
+/**
+ * Lista de OS. Os filtros ficam no endereço da página e a busca é feita no banco,
+ * página por página (50 por vez), para continuar rápida mesmo com milhares de OS.
+ */
+export function ServicosList({
+  linhas,
+  recentes,
+  contagens,
+  totalFiltrado,
+  pagina,
+  filtros,
+  algumaOs,
+}: {
+  linhas: OsLinha[];
+  recentes: OsLinha[];
+  contagens: Record<Enums<"os_status">, number>;
+  totalFiltrado: number;
+  pagina: number;
+  filtros: Filtros;
+  algumaOs: boolean;
+}) {
   const { t, fmt } = useI18n();
   const { date, money, relativeDays } = fmt;
   const router = useRouter();
-  const [aba, setAba] = useState<Aba>("todos");
-  const [q, setQ] = useState("");
-  const [de, setDe] = useState("");
-  const [ate, setAte] = useState("");
-  const [categoria, setCategoria] = useState("");
+  const { abrir } = useViewer();
+  const [q, setQ] = useState(filtros.q);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [openId, setOpenId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string[] | null>(null);
   const [pending, start] = useTransition();
+  const [navegando, startNav] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const filtradas = useMemo(() => {
-    const term = normalize(q);
-    const digits = q.replace(/\D/g, "");
-    return linhas.filter((o) => {
-      if (de && o.data_inicio < de) return false;
-      if (ate && o.data_inicio > ate) return false;
-      if (categoria && !o.categorias.includes(categoria)) return false;
-      if (!term) return true;
-      return (
-        normalize(`${o.cliente ?? ""} ${o.relato ?? ""} ${o.servicos.join(" ")}`).includes(term) ||
-        (digits.length > 0 && String(o.numero).includes(String(Number(digits))))
-      );
-    });
-  }, [linhas, q, de, ate, categoria]);
+  const somaTodos = Object.values(contagens).reduce((a, b) => a + b, 0);
+  const paginas = Math.max(1, Math.ceil(totalFiltrado / POR_PAGINA));
 
-  const list = aba === "todos" ? filtradas : filtradas.filter((o) => o.status === aba);
-  const count = (s: Enums<"os_status">) => filtradas.filter((o) => o.status === s).length;
-  const recentes = linhas.slice(0, 5);
-  const aberto = linhas.find((o) => o.id === openId) ?? null;
+  // Troca de página ou de filtro: limpa a seleção.
+  useEffect(() => setSelected(new Set()), [linhas]);
+
+  function aplicar(patch: Partial<Filtros> & { pagina?: number }) {
+    const f = { ...filtros, q, ...patch };
+    const p = new URLSearchParams();
+    if (f.aba !== "todos") p.set("aba", f.aba);
+    if (f.q.trim()) p.set("q", f.q.trim());
+    if (f.de) p.set("de", f.de);
+    if (f.ate) p.set("ate", f.ate);
+    if (f.cat) p.set("cat", f.cat);
+    if (patch.pagina && patch.pagina > 1) p.set("pagina", String(patch.pagina));
+    const qs = p.toString();
+    startNav(() => router.replace(qs ? `/servicos?${qs}` : "/servicos", { scroll: false }));
+  }
+
+  // Busca: espera a pessoa parar de digitar.
+  const primeira = useRef(true);
+  useEffect(() => {
+    if (primeira.current) {
+      primeira.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => aplicar({ q }), 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   function remove(ids: string[]) {
     start(async () => {
@@ -86,25 +108,22 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
       if (!r.ok) return setError(t(r.error));
       setConfirm(null);
       setSelected(new Set());
-      setOpenId(null);
       router.refresh();
     });
   }
 
-  function mudarStatus(id: string, status: Enums<"os_status">) {
-    start(async () => {
-      const r = await alterarStatus(id, status);
-      if (r.ok) router.refresh();
-    });
-  }
-
-  const filtrosAtivos = Boolean(de || ate || categoria);
+  const filtrosAtivos = Boolean(filtros.de || filtros.ate || filtros.cat);
+  const semFiltro = !filtros.q && !filtrosAtivos;
 
   return (
     <>
       <PageHeader
         title={t("Serviços Prestados")}
-        description={`${linhas.length === 1 ? t("1 atendimento") : t("{n} atendimentos", { n: linhas.length })} · ${t("{n} em andamento", { n: count("em_andamento") })}`}
+        description={
+          semFiltro
+            ? `${somaTodos === 1 ? t("1 atendimento") : t("{n} atendimentos", { n: somaTodos })} · ${t("{n} em andamento", { n: contagens.em_andamento })}`
+            : undefined
+        }
         actions={
           <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />}>
             {t("Novo atendimento")}
@@ -120,7 +139,7 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
               <button
                 key={o.id}
                 type="button"
-                onClick={() => setOpenId(o.id)}
+                onClick={() => abrir({ tipo: "os", id: o.id })}
                 className="flex w-56 shrink-0 snap-start flex-col gap-2 rounded-xl bg-surface p-4 text-left shadow-card hover:shadow-pop lg:w-auto"
               >
                 <span className="flex items-center justify-between gap-2">
@@ -143,24 +162,27 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
         <div className="grid gap-3 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <PillTabs
-              value={aba}
-              onChange={setAba}
+              value={filtros.aba}
+              onChange={(aba) => aplicar({ aba })}
               items={[
-                { value: "todos", label: t("Todos"), count: filtradas.length },
-                ...STATUS_OPCOES.map((s) => ({ value: s.value, label: t(s.label), count: count(s.value) })),
+                { value: "todos" as Aba, label: t("Todos"), count: somaTodos },
+                ...STATUS_OPCOES.map((s) => ({ value: s.value as Aba, label: t(s.label), count: contagens[s.value] })),
               ]}
             />
-            <SearchInput value={q} onChange={setQ} placeholder={t("Cliente, serviço ou nº")} className="w-full sm:w-72" />
+            <div className="flex w-full items-center gap-2 sm:w-72">
+              <SearchInput value={q} onChange={setQ} placeholder={t("Cliente, serviço ou nº")} className="w-full" />
+              {navegando ? <Loader2 className="size-4 shrink-0 animate-spin text-ink-subtle" /> : null}
+            </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[repeat(3,minmax(0,200px))_auto] sm:items-end">
             <Field label={t("De")} htmlFor="f-de">
-              <Input id="f-de" type="date" value={de} onChange={(e) => setDe(e.target.value)} />
+              <Input id="f-de" type="date" value={filtros.de} onChange={(e) => aplicar({ de: e.target.value })} />
             </Field>
             <Field label={t("Até")} htmlFor="f-ate">
-              <Input id="f-ate" type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
+              <Input id="f-ate" type="date" value={filtros.ate} onChange={(e) => aplicar({ ate: e.target.value })} />
             </Field>
             <Field label={t("Tipo de serviço")} htmlFor="f-cat">
-              <Select id="f-cat" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+              <Select id="f-cat" value={filtros.cat} onChange={(e) => aplicar({ cat: e.target.value })}>
                 <option value="">{t("Todos os tipos")}</option>
                 {Object.entries(CATEGORIA_LABEL).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -170,21 +192,14 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
               </Select>
             </Field>
             {filtrosAtivos ? (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setDe("");
-                  setAte("");
-                  setCategoria("");
-                }}
-              >
+              <Button variant="ghost" onClick={() => aplicar({ de: "", ate: "", cat: "" })}>
                 {t("Limpar filtros")}
               </Button>
             ) : null}
           </div>
         </div>
 
-        {linhas.length === 0 ? (
+        {!algumaOs ? (
           <EmptyState
             icon={Wrench}
             title={t("Nenhum atendimento ainda")}
@@ -195,18 +210,18 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
               </ButtonLink>
             }
           />
-        ) : list.length === 0 ? (
+        ) : linhas.length === 0 ? (
           <p className="px-4 pb-8 text-center text-sm text-ink-subtle">{t("Nenhum atendimento com esses filtros.")}</p>
         ) : (
-          <>
+          <div className={navegando ? "opacity-60 transition-opacity" : undefined}>
             <table className="hidden w-full text-sm md:table">
               <thead>
                 <tr className="border-y border-border text-left text-xs text-ink-subtle">
                   <th className="w-10 py-2.5 pl-4">
                     <Checkbox
                       aria-label={t("Selecionar todos")}
-                      checked={list.length > 0 && list.every((o) => selected.has(o.id))}
-                      onChange={(v) => setSelected(v ? new Set(list.map((o) => o.id)) : new Set())}
+                      checked={linhas.length > 0 && linhas.every((o) => selected.has(o.id))}
+                      onChange={(v) => setSelected(v ? new Set(linhas.map((o) => o.id)) : new Set())}
                     />
                   </th>
                   <th className="px-4 py-2.5 font-medium">{t("Nº")}</th>
@@ -217,10 +232,10 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
                 </tr>
               </thead>
               <tbody>
-                {list.map((o) => (
+                {linhas.map((o) => (
                   <tr
                     key={o.id}
-                    onClick={() => setOpenId(o.id)}
+                    onClick={() => abrir({ tipo: "os", id: o.id })}
                     className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-muted"
                   >
                     <td className="py-3 pl-4" onClick={(e) => e.stopPropagation()}>
@@ -246,14 +261,14 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
             </table>
 
             <ul className="divide-y divide-border border-t border-border md:hidden">
-              {list.map((o) => (
+              {linhas.map((o) => (
                 <li key={o.id} className="flex items-center gap-3 px-4 py-3">
                   <Checkbox
                     aria-label={t("Selecionar OS {n}", { n: docNumber(o.numero) })}
                     checked={selected.has(o.id)}
                     onChange={() => setSelected((s) => toggleId(s, o.id))}
                   />
-                  <button type="button" onClick={() => setOpenId(o.id)} className="min-w-0 flex-1 text-left">
+                  <button type="button" onClick={() => abrir({ tipo: "os", id: o.id })} className="min-w-0 flex-1 text-left">
                     <span className="flex justify-between gap-2">
                       <span className="truncate font-medium">{o.cliente ?? t("Cliente não definido")}</span>
                       <span className="shrink-0 font-medium tabular-nums">{money(o.valor_total)}</span>
@@ -267,7 +282,39 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
                 </li>
               ))}
             </ul>
-          </>
+
+            {paginas > 1 ? (
+              <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-[13px] text-ink-muted">
+                <span>
+                  {t("{de}–{ate} de {total}", {
+                    de: (pagina - 1) * POR_PAGINA + 1,
+                    ate: Math.min(pagina * POR_PAGINA, totalFiltrado),
+                    total: totalFiltrado,
+                  })}
+                </span>
+                <span className="flex gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<ChevronLeft />}
+                    disabled={pagina <= 1 || navegando}
+                    onClick={() => aplicar({ pagina: pagina - 1 })}
+                  >
+                    {t("Anterior")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pagina >= paginas || navegando}
+                    onClick={() => aplicar({ pagina: pagina + 1 })}
+                  >
+                    {t("Próxima")}
+                    <ChevronRight />
+                  </Button>
+                </span>
+              </div>
+            ) : null}
+          </div>
         )}
 
         <SelectionBar
@@ -279,102 +326,6 @@ export function ServicosList({ linhas }: { linhas: OsLinha[] }) {
           }}
         />
       </Card>
-
-      {aberto ? (
-        <Drawer
-          open
-          onClose={() => setOpenId(null)}
-          overline={t("OS {n}", { n: docNumber(aberto.numero) })}
-          title={aberto.cliente ?? t("Cliente não definido")}
-          footer={
-            <>
-              <Button variant="danger" size="sm" onClick={() => setConfirm([aberto.id])}>
-                {t("Excluir")}
-              </Button>
-              <span className="flex-1" />
-              <ButtonLink href={`/servicos/${aberto.id}`} variant="dark" size="sm">
-                {t("Editar OS")}
-              </ButtonLink>
-            </>
-          }
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={aberto.status} suffix={relativeDays(aberto.data_inicio)} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-0.5 rounded-lg bg-surface-muted p-3">
-              <span className="text-xs text-ink-subtle">{t("Cliente")}</span>
-              <span className="truncate text-sm font-semibold">{aberto.cliente ?? t("Não definido")}</span>
-              <span className="text-xs text-ink-subtle">{phone(aberto.telefone)}</span>
-              {aberto.cliente_id ? (
-                <Link href={`/clientes?abrir=${aberto.cliente_id}`} className="mt-1 text-[13px] font-medium text-brand-ink">
-                  {t("Ver cliente →")}
-                </Link>
-              ) : null}
-            </div>
-            <div className="grid gap-0.5 rounded-lg bg-surface-muted p-3">
-              <span className="text-xs text-ink-subtle">{t("Total")}</span>
-              <span className="text-sm font-semibold tabular-nums">{money(aberto.valor_total)}</span>
-              <span className="text-xs text-ink-subtle">
-                {aberto.recebido ? t("Recebido: {valor}", { valor: money(aberto.valor_recebido ?? aberto.valor_total) }) : t("Não recebido")}
-              </span>
-              {whatsappLink(aberto.telefone) ? (
-                <a
-                  href={whatsappLink(aberto.telefone) ?? undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 text-[13px] font-medium text-brand-ink"
-                >
-                  WhatsApp →
-                </a>
-              ) : null}
-            </div>
-          </div>
-
-          <dl className="grid grid-cols-[120px_1fr] gap-x-3 gap-y-2 text-sm">
-            <dt className="text-ink-subtle">{t("Início")}</dt>
-            <dd className="tabular-nums">{date(aberto.data_inicio)}</dd>
-            <dt className="text-ink-subtle">{t("Entrega")}</dt>
-            <dd className="tabular-nums">{aberto.data_entrega ? date(aberto.data_entrega) : "—"}</dd>
-            {aberto.recebido && aberto.data_recebimento ? (
-              <>
-                <dt className="text-ink-subtle">{t("Recebimento")}</dt>
-                <dd className="tabular-nums">{date(aberto.data_recebimento)}</dd>
-              </>
-            ) : null}
-            <dt className="text-ink-subtle">{t("Serviços")}</dt>
-            <dd>{aberto.servicos.join(", ") || "—"}</dd>
-          </dl>
-
-          {aberto.relato ? (
-            <section>
-              <h3 className="mb-1 text-sm font-semibold">{t("Relato do cliente")}</h3>
-              <p className="rounded-lg bg-surface-muted p-3 text-sm whitespace-pre-wrap">{aberto.relato}</p>
-            </section>
-          ) : null}
-
-          <div className="grid gap-2">
-            <PdfActions tipo="os" id={aberto.id} numero={aberto.numero} />
-            <WhatsappButton tipo="os" id={aberto.id} />
-          </div>
-
-          <Field label={t("Mudar status")} htmlFor="dr-status">
-            <Select
-              id="dr-status"
-              value={aberto.status}
-              disabled={pending}
-              onChange={(e) => mudarStatus(aberto.id, e.target.value as Enums<"os_status">)}
-            >
-              {Object.entries(OS_STATUS).map(([v, s]) => (
-                <option key={v} value={v}>
-                  {t(s.label)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </Drawer>
-      ) : null}
 
       <ConfirmDialog
         open={confirm !== null}

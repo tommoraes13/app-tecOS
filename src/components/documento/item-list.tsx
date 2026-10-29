@@ -64,6 +64,7 @@ export function ItemList({
                         : t("Nenhum produto no catálogo. Digite para usar um avulso.")
                     }
                     freeLabel={(text) => t("Outro: usar “{texto}”", { texto: text })}
+                    commitOnBlur
                     onFree={(text) => patch(item.key, { catalogId: null, descricao: text, tempo_min: null })}
                     onSelect={(sel) => {
                       if (!sel) return patch(item.key, { catalogId: null, descricao: "", tempo_min: null });

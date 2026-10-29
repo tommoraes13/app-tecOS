@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Plus, Trash2 } from "lucide-react";
@@ -31,7 +31,9 @@ import { docNumber, duration, phone } from "@/lib/format";
 import { DURACOES, EQUIPAMENTO_CURTO } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { asSpecs, fichaEquipamento } from "@/lib/equipamentos";
 import { ItemList } from "./item-list";
+import { GuardaSaida } from "./guarda-saida";
 import { PdfActions } from "./pdf-actions";
 import { WhatsappButton } from "./whatsapp-button";
 
@@ -65,6 +67,18 @@ export function DocumentoForm({
   const isOS = mode === "os";
   const [form, setForm] = useState<DocForm>(initial);
   const [clientes, setClientes] = useState(clientesIniciais);
+  const [busca, setBusca] = useState<ClienteOpcao[]>(clientesIniciais);
+
+  // Clientes buscados no banco conforme você digita (não carrega a lista inteira).
+  const buscaSeq = useRef(0);
+  const buscarClientes = useCallback((q: string) => {
+    const seq = ++buscaSeq.current;
+    window.setTimeout(async () => {
+      if (seq !== buscaSeq.current) return;
+      const { data } = await createClient().rpc("buscar_clientes", { p_q: q, p_limite: 20 });
+      if (seq === buscaSeq.current) setBusca((data ?? []) as ClienteOpcao[]);
+    }, q ? 250 : 0);
+  }, []);
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
   const [equipAtivos, setEquipAtivos] = useState(initial.equipamentos.length > 0);
   const [clienteModal, setClienteModal] = useState<string | null>(null);
@@ -127,18 +141,43 @@ export function DocumentoForm({
     }
   }
 
+  // O que está salvo no banco, para avisar "Salvar antes de sair?" quando houver mudanças.
+  const salvoRef = useRef(JSON.stringify(initial));
+  const alterado = JSON.stringify(form) !== salvoRef.current;
+
+  /** Salva sem mudar de tela (usado pelo aviso de saída). */
+  async function salvarParaSair() {
+    const enviado = form;
+    const r = isOS ? await salvarAtendimento(enviado) : await salvarOrcamento(enviado);
+    if (!r.ok) {
+      setFeedback({ kind: "error", text: t(r.error) });
+      return false;
+    }
+    salvoRef.current = JSON.stringify({ ...enviado, numero: r.data.numero });
+    return true;
+  }
+
   function salvar() {
+    const enviado = form;
     start(async () => {
-      const r = isOS ? await salvarAtendimento(form) : await salvarOrcamento(form);
+      const r = isOS ? await salvarAtendimento(enviado) : await salvarOrcamento(enviado);
       if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
+      salvoRef.current = JSON.stringify({ ...enviado, numero: r.data.numero });
       afterSave(r.data.id, r.data.numero, isOS ? t("Atendimento salvo.") : t("Orçamento salvo."));
     });
   }
 
   function finalizar() {
+    const enviado = form;
     start(async () => {
-      const r = await finalizarAtendimento(form);
+      const r = await finalizarAtendimento(enviado);
       if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
+      salvoRef.current = JSON.stringify({
+        ...enviado,
+        numero: r.data.numero,
+        status: r.data.status,
+        data_entrega: enviado.data_entrega || fmt.today(),
+      });
       const msg =
         r.data.status === "finalizado" ? t("OS finalizada.") : t("OS concluída e marcada como Aguardando Pagamento.");
       setForm((f) => ({ ...f, status: r.data.status, data_entrega: f.data_entrega || fmt.today() }));
@@ -148,8 +187,10 @@ export function DocumentoForm({
 
   function transformar() {
     start(async () => {
-      const r = await transformarEmAtendimento(form);
+      const enviado = form;
+      const r = await transformarEmAtendimento(enviado);
       if (!r.ok) return setFeedback({ kind: "error", text: t(r.error) });
+      salvoRef.current = JSON.stringify(enviado);
       router.push(`/servicos/${r.data.osId}`);
     });
   }
@@ -247,18 +288,21 @@ export function DocumentoForm({
                     <div className="min-w-0 flex-1">
                       <Combobox
                         id="doc-cliente"
-                        items={clientes.map((c) => ({
+                        items={busca.map((c) => ({
                           id: c.id,
                           label: c.nome,
                           sublabel: [phone(c.telefone), c.bairro, c.cidade].filter(Boolean).join(" · "),
                           search: c.telefone,
                         }))}
                         valueLabel={cliente?.nome ?? ""}
+                        onQueryChange={buscarClientes}
                         placeholder={t("Buscar cliente pelo nome")}
                         emptyText={t("Nenhum cliente encontrado")}
                         freeLabel={(text) => t("Cadastrar “{nome}” como novo cliente", { nome: text })}
                         onFree={(text) => setClienteModal(text)}
                         onSelect={(item) => {
+                          const escolhido = item ? busca.find((c) => c.id === item.id) : null;
+                          if (escolhido) setClientes((list) => [...list.filter((x) => x.id !== escolhido.id), escolhido]);
                           set({ cliente_id: item?.id ?? null, equipamentos: [] });
                         }}
                       />
@@ -286,7 +330,19 @@ export function DocumentoForm({
                       <Select
                         id="doc-status"
                         value={form.status}
-                        onChange={(e) => set({ status: e.target.value as DocForm["status"] })}
+                        onChange={(e) => {
+                          const status = e.target.value as DocForm["status"];
+                          // Regra: Finalizado já conta como recebido hoje (pode ajustar na seção Recebimento).
+                          if (status === "finalizado" && !form.recebido) {
+                            set({
+                              status,
+                              recebido: true,
+                              valor_recebido: form.valor_recebido ?? tot.total,
+                              data_recebimento: fmt.today(),
+                              data_entrega: form.data_entrega || fmt.today(),
+                            });
+                          } else set({ status });
+                        }}
                       >
                         {STATUS_OPCOES.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -487,9 +543,15 @@ export function DocumentoForm({
                                 })
                               }
                               label={
-                                <span>
-                                  <span className="block font-medium">{e.nome}</span>
-                                  <span className="block text-xs text-ink-subtle">{t(EQUIPAMENTO_CURTO[e.tipo])}</span>
+                                <span className="min-w-0">
+                                  <span className="block font-medium">
+                                    {e.nome} <span className="font-normal text-ink-subtle">· {t(EQUIPAMENTO_CURTO[e.tipo])}</span>
+                                  </span>
+                                  {fichaEquipamento(e.tipo, asSpecs(e.especificacoes), t) ? (
+                                    <span className="block text-xs text-ink-subtle">
+                                      {fichaEquipamento(e.tipo, asSpecs(e.especificacoes), t)}
+                                    </span>
+                                  ) : null}
                                 </span>
                               }
                             />
@@ -790,7 +852,20 @@ export function DocumentoForm({
       </div>
 
       {/* Celular: ações no fim da página */}
-      <div className="mt-4 lg:hidden">{acoes}</div>
+      <div className="mt-4 pb-20 lg:hidden">{acoes}</div>
+
+      {/* Celular: barra fixa com o total e o botão de salvar */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-surface px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] shadow-pop lg:hidden">
+        <div className="min-w-0 flex-1">
+          <span className="block text-xs text-ink-subtle">{t("Total")}</span>
+          <span className="block truncate text-lg leading-6 font-semibold tabular-nums">{money(tot.total)}</span>
+        </div>
+        <Button variant="dark" onClick={salvar} disabled={pending}>
+          {pending ? t("Salvando…") : isOS ? t("Salvar atendimento") : t("Salvar orçamento")}
+        </Button>
+      </div>
+
+      <GuardaSaida alterado={alterado} salvar={salvarParaSair} />
 
       <ClienteModal
         open={clienteModal !== null}

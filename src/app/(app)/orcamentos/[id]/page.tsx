@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { DocumentoForm } from "@/components/documento/documento-form";
-import { aplicarTempos, carregarApoio, carregarOrcamento } from "@/lib/documento-server";
+import { aplicarTempos, carregarApoio, comCliente, carregarOrcamento } from "@/lib/documento-server";
 import { createClient } from "@/lib/supabase/server";
 import { pageTitle } from "@/i18n/server";
 
@@ -11,11 +11,12 @@ export default async function OrcamentoPage({ params }: { params: Promise<{ id: 
   const supabase = await createClient();
   const [apoio, orc] = await Promise.all([carregarApoio(supabase), carregarOrcamento(supabase, id)]);
   if (!orc) notFound();
+  const clientes = await comCliente(supabase, apoio.clientes, orc.form.cliente_id);
   return (
     <DocumentoForm
       mode="orcamento"
       initial={aplicarTempos(orc.form, apoio.servicos)}
-      clientes={apoio.clientes}
+      clientes={clientes}
       servicos={apoio.servicos}
       produtos={apoio.produtos}
       padroes={apoio.padroes}

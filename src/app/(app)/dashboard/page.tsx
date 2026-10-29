@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus, Trophy, Wrench } from "lucide-react";
+import { ViewerLink } from "@/components/detalhes/viewer";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { LinkTabs } from "@/components/ui/link-tabs";
 import { StatCard } from "@/components/ui/stat-card";
-import { metricas, PERIODOS, periodoValido, variacao } from "@/lib/dashboard";
+import { intervalo, lerResumo, PERIODOS, periodoValido, variacao } from "@/lib/dashboard";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getI18n } from "@/i18n/server";
 import { docNumber } from "@/lib/format";
@@ -23,37 +24,35 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ periodo?: string }> }) {
   const periodo = periodoValido((await searchParams).periodo);
   const supabase = await createClient();
-  const [user, { t, fmt }, { data: negocio }, { data: oss }, { data: clientes }] = await Promise.all([
+  const { t, fmt } = await getI18n();
+  const r = intervalo(periodo, fmt.today());
+  const porSemana = r.dias > 31;
+  // Números e listas já calculados no banco: a tela não baixa todas as OS.
+  const [user, { data: negocio }, resumo, { data: ultimosData }, { data: melhoresData }] = await Promise.all([
     getPerfil(),
-    getI18n(),
     supabase.from("meu_negocio").select("nome_fantasia").maybeSingle(),
+    supabase.rpc("dashboard_resumo", {
+      p_inicio: r.inicio,
+      p_fim: r.fim,
+      p_ant_inicio: r.anteriorInicio,
+      p_ant_fim: r.anteriorFim,
+      p_semanal: porSemana,
+    }),
     supabase
-      .from("base_atendimentos")
-      .select("id, numero, cliente_id, status, data_inicio, data_entrega, valor_total, valor_recebido, recebido, data_recebimento, created_at")
+      .from("os_lista")
+      .select("id, numero, cliente, status, data_inicio, valor_total")
       .order("data_inicio", { ascending: false })
       .order("numero", { ascending: false })
-      .limit(5000),
-    supabase.from("base_clientes").select("id, nome"),
+      .limit(6),
+    supabase.rpc("melhores_clientes", { p_limite: 5 }),
   ]);
-  const nomes = new Map((clientes ?? []).map((c) => [c.id, c.nome]));
-  const ultimos = (oss ?? []).slice(0, 6);
-
-  // Melhores clientes: quem mais gastou (soma das OS), com nº de atendimentos e último serviço.
-  const porCliente = new Map<string, { total: number; qtd: number; ultimo: string }>();
-  for (const o of oss ?? []) {
-    if (!o.cliente_id) continue;
-    const c = porCliente.get(o.cliente_id) ?? { total: 0, qtd: 0, ultimo: "" };
-    c.total += Number(o.valor_total);
-    c.qtd += 1;
-    if (o.data_inicio > c.ultimo) c.ultimo = o.data_inicio;
-    porCliente.set(o.cliente_id, c);
-  }
-  const melhores = [...porCliente.entries()]
-    .map(([id, v]) => ({ id, nome: nomes.get(id) ?? t("Cliente"), ...v }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-
-  const m = metricas(oss ?? [], periodo, fmt.today());
+  const ultimos = (ultimosData ?? []).flatMap((o) =>
+    o.id && o.status && o.data_inicio
+      ? [{ id: o.id, numero: o.numero ?? 0, cliente: o.cliente, status: o.status, data_inicio: o.data_inicio, valor_total: o.valor_total ?? 0 }]
+      : [],
+  );
+  const melhores = (melhoresData ?? []).map((c) => ({ ...c, total: Number(c.total) }));
+  const m = { r, porSemana, ...lerResumo(resumo.data) };
   const nome =
     user?.nome ?? negocio?.nome_fantasia ?? user?.email?.split("@")[0];
   const real = variacao(m.realizados, m.realizadosAntes);
@@ -139,10 +138,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <ul className="mt-3 divide-y divide-border border-t border-border">
               {ultimos.map((o) => (
                 <li key={o.id}>
-                  <Link href={`/servicos/${o.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-muted">
+                  <ViewerLink tipo="os" id={o.id} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-surface-muted">
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">
-                        {o.cliente_id ? (nomes.get(o.cliente_id) ?? t("Cliente")) : t("Cliente não definido")}
+                        {o.cliente ?? t("Cliente não definido")}
                       </span>
                       <span className="block text-xs text-ink-subtle">
                         <span className="font-mono">{t("OS {n}", { n: docNumber(o.numero) })}</span> · {date(o.data_inicio)}
@@ -152,7 +151,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       <span className="text-sm font-medium tabular-nums">{money(o.valor_total)}</span>
                       <StatusBadge status={o.status} />
                     </span>
-                  </Link>
+                  </ViewerLink>
                 </li>
               ))}
             </ul>
@@ -179,10 +178,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 {melhores.map((c, i) => (
                   <tr key={c.id} className="border-b border-border last:border-0">
                     <td className="px-5 py-3">
-                      <Link href={`/clientes?abrir=${c.id}`} className="flex items-center gap-3 font-medium hover:text-brand-ink">
+                      <ViewerLink tipo="cliente" id={c.id} className="flex items-center gap-3 text-left font-medium hover:text-brand-ink">
                         <span className="grid size-6 place-items-center rounded-full bg-surface-muted text-xs text-ink-muted">{i + 1}</span>
                         {c.nome}
-                      </Link>
+                      </ViewerLink>
                     </td>
                     <td className="px-5 py-3 text-right tabular-nums">{c.qtd}</td>
                     <td className="px-5 py-3 text-right text-ink-muted tabular-nums">{date(c.ultimo)}</td>
@@ -194,7 +193,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <ul className="mt-3 divide-y divide-border border-t border-border md:hidden">
               {melhores.map((c, i) => (
                 <li key={c.id}>
-                  <Link href={`/clientes?abrir=${c.id}`} className="flex items-center gap-3 px-4 py-3">
+                  <ViewerLink tipo="cliente" id={c.id} className="flex w-full items-center gap-3 px-4 py-3 text-left">
                     <span className="grid size-6 shrink-0 place-items-center rounded-full bg-surface-muted text-xs text-ink-muted">
                       {i + 1}
                     </span>
@@ -205,7 +204,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       </span>
                     </span>
                     <span className="shrink-0 font-medium tabular-nums">{money(c.total)}</span>
-                  </Link>
+                  </ViewerLink>
                 </li>
               ))}
             </ul>

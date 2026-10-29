@@ -1,44 +1,101 @@
-import { createClient } from "@/lib/supabase/server";
-import { ServicosList, type OsLinha } from "./servicos-list";
+import type { Enums } from "@/lib/database.types";
 import { pageTitle } from "@/i18n/server";
+import { normalize } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
+import { POR_PAGINA, ServicosList, type Filtros, type OsLinha } from "./servicos-list";
 
 export const generateMetadata = pageTitle("Serviços Prestados");
 
-export default async function ServicosPage() {
+const STATUS: Enums<"os_status">[] = ["em_andamento", "pendente", "aguardando_pagamento", "finalizado", "retorno"];
+const dataOk = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "");
+
+export default async function ServicosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ aba?: string; q?: string; de?: string; ate?: string; cat?: string; pagina?: string }>;
+}) {
+  const sp = await searchParams;
+  const filtros: Filtros = {
+    aba: STATUS.includes(sp.aba as Enums<"os_status">) ? (sp.aba as Enums<"os_status">) : "todos",
+    q: (sp.q ?? "").slice(0, 80),
+    de: dataOk(sp.de),
+    ate: dataOk(sp.ate),
+    cat: (sp.cat ?? "").replace(/[^a-z_]/g, ""),
+  };
+  const pagina = Math.max(1, Math.floor(Number(sp.pagina) || 1));
+
+  // Busca sem acento: a coluna "busca" já vem minúscula e sem acento do banco.
+  const termo = normalize(filtros.q).replace(/[,()*%\\"'.:]/g, " ").replace(/\s+/g, " ").trim();
+  const numero = /^\d{1,5}$/.test(filtros.q.trim()) ? Number(filtros.q.trim()) : null;
+
   const supabase = await createClient();
-  const [os, cl, itens, cat] = await Promise.all([
-    supabase
-      .from("base_atendimentos")
-      .select("id, numero, status, data_inicio, data_entrega, valor_total, valor_recebido, recebido, data_recebimento, cliente_id, relato")
+  let lista = supabase
+    .from("os_lista")
+    .select("id, numero, status, data_inicio, valor_total, cliente, relato, servicos", { count: "exact" });
+  if (filtros.aba !== "todos") lista = lista.eq("status", filtros.aba);
+  if (filtros.de) lista = lista.gte("data_inicio", filtros.de);
+  if (filtros.ate) lista = lista.lte("data_inicio", filtros.ate);
+  if (filtros.cat) lista = lista.contains("categorias", [filtros.cat]);
+  if (termo) lista = lista.or(numero !== null ? `busca.ilike.*${termo}*,numero.eq.${numero}` : `busca.ilike.*${termo}*`);
+
+  const inicio = (pagina - 1) * POR_PAGINA;
+  const [res, cont, rec] = await Promise.all([
+    lista
       .order("data_inicio", { ascending: false })
       .order("numero", { ascending: false })
-      .limit(1000),
-    supabase.from("base_clientes").select("id, nome, telefone"),
-    supabase.from("os_servicos").select("os_id, servico_id, descricao"),
-    supabase.from("cadastro_servicos").select("id, categoria"),
+      .range(inicio, inicio + POR_PAGINA - 1),
+    supabase.rpc("os_contagens", {
+      p_busca: termo || undefined,
+      p_numero: numero ?? undefined,
+      p_de: filtros.de || undefined,
+      p_ate: filtros.ate || undefined,
+      p_categoria: filtros.cat || undefined,
+    }),
+    supabase
+      .from("os_lista")
+      .select("id, numero, status, data_inicio, valor_total, cliente, relato, servicos")
+      .order("data_inicio", { ascending: false })
+      .order("numero", { ascending: false })
+      .limit(5),
   ]);
-  const clientes = new Map((cl.data ?? []).map((c) => [c.id, c]));
-  const categoria = new Map((cat.data ?? []).map((c) => [c.id, c.categoria]));
-  const porOs = new Map<string, { descricoes: string[]; categorias: Set<string> }>();
-  for (const i of itens.data ?? []) {
-    const entry = porOs.get(i.os_id) ?? { descricoes: [], categorias: new Set<string>() };
-    entry.descricoes.push(i.descricao);
-    const c = i.servico_id ? categoria.get(i.servico_id) : null;
-    if (c) entry.categorias.add(c);
-    porOs.set(i.os_id, entry);
-  }
 
-  const linhas: OsLinha[] = (os.data ?? []).map((o) => {
-    const c = o.cliente_id ? clientes.get(o.cliente_id) : undefined;
-    const extra = porOs.get(o.id);
-    return {
-      ...o,
-      cliente: c?.nome ?? null,
-      telefone: c?.telefone ?? null,
-      servicos: extra?.descricoes ?? [],
-      categorias: [...(extra?.categorias ?? [])],
-    };
-  });
+  const paraLinha = (o: {
+    id: string | null;
+    numero: number | null;
+    status: Enums<"os_status"> | null;
+    data_inicio: string | null;
+    valor_total: number | null;
+    cliente: string | null;
+    relato: string | null;
+    servicos: string[] | null;
+  }): OsLinha[] =>
+    o.id && o.status && o.data_inicio
+      ? [
+          {
+            id: o.id,
+            numero: o.numero ?? 0,
+            status: o.status,
+            data_inicio: o.data_inicio,
+            valor_total: o.valor_total ?? 0,
+            cliente: o.cliente,
+            relato: o.relato,
+            servicos: o.servicos ?? [],
+          },
+        ]
+      : [];
 
-  return <ServicosList linhas={linhas} />;
+  const contagens = Object.fromEntries(STATUS.map((s) => [s, 0])) as Record<Enums<"os_status">, number>;
+  for (const c of cont.data ?? []) contagens[c.status] = c.qtd;
+
+  return (
+    <ServicosList
+      linhas={(res.data ?? []).flatMap(paraLinha)}
+      recentes={(rec.data ?? []).flatMap(paraLinha)}
+      contagens={contagens}
+      totalFiltrado={res.count ?? 0}
+      pagina={pagina}
+      filtros={filtros}
+      algumaOs={(rec.data ?? []).length > 0}
+    />
+  );
 }

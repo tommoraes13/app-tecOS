@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getI18n } from "@/i18n/server";
 import { fail, requireUser, txt, type ActionResult } from "@/lib/actions";
 import type { Enums } from "@/lib/database.types";
 import { totais, type DocForm } from "@/lib/documento";
@@ -21,6 +22,11 @@ export async function salvarAtendimento(f: DocForm): Promise<ActionResult<{ id: 
     if (erro) return { ok: false, error: erro };
     const { supabase } = await requireUser();
     const t = totais(f);
+    // Regra: OS marcada como Finalizado conta como recebida (valor total, data de hoje).
+    if (f.status === "finalizado" && !f.recebido) {
+      const hoje = (await getI18n()).fmt.today();
+      f = { ...f, recebido: true, valor_recebido: f.valor_recebido ?? t.total, data_recebimento: hoje, data_entrega: f.data_entrega || hoje };
+    }
 
     const header = {
       numero: f.numero,
@@ -146,9 +152,18 @@ export async function finalizarAtendimento(
 export async function alterarStatus(id: string, status: Enums<"os_status">): Promise<ActionResult> {
   try {
     const { supabase } = await requireUser();
+    const extra: { recebido?: boolean; data_recebimento?: string; data_entrega?: string } = {};
+    if (status === "finalizado") {
+      // Regra: Finalizado conta como recebido hoje (o banco completa valor e entrega se faltarem).
+      const { data: atual } = await supabase.from("base_atendimentos").select("recebido").eq("id", id).maybeSingle();
+      if (atual && !atual.recebido) {
+        const hoje = (await getI18n()).fmt.today();
+        Object.assign(extra, { recebido: true, data_recebimento: hoje });
+      }
+    }
     const { error } = await supabase
       .from("base_atendimentos")
-      .update({ status, finalizado_em: status === "finalizado" ? new Date().toISOString() : null })
+      .update({ status, finalizado_em: status === "finalizado" ? new Date().toISOString() : null, ...extra })
       .eq("id", id);
     if (error) return fail(error);
     revalidatePath("/servicos");

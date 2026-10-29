@@ -20,13 +20,17 @@ type Produto = Tables<"cadastro_produtos">;
 
 const empty: ProdutoInput = { nome: "", codigo: "", valor_custo: null, valor_venda: 0 };
 
-export function CatalogoProdutos({ produtos }: { produtos: Produto[] }) {
+export function CatalogoProdutos({ produtos, abrirId = null }: { produtos: Produto[]; abrirId?: string | null }) {
   const { t, fmt } = useI18n();
   const { money } = fmt;
   const router = useRouter();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [editing, setEditing] = useState<ProdutoInput | null>(null);
+  // Vindo da busca (?abrir=<id>): já abre o produto para editar.
+  const [editing, setEditing] = useState<ProdutoInput | null>(() => {
+    const p = abrirId ? produtos.find((x) => x.id === abrirId) : null;
+    return p ? { id: p.id, nome: p.nome, codigo: p.codigo ?? "", valor_custo: p.valor_custo, valor_venda: p.valor_venda } : null;
+  });
   const [confirm, setConfirm] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);

@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
+import { useViewer } from "@/components/detalhes/viewer";
 import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { ButtonLink } from "@/components/ui/button";
@@ -47,6 +47,7 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
   const { t, fmt } = useI18n();
   const { date, money, relativeDays } = fmt;
   const router = useRouter();
+  const { abrir } = useViewer();
   const [aba, setAba] = useState<Aba>("aguardando");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -128,7 +129,11 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
                   checked={selected.has(o.id)}
                   onChange={() => setSelected((s) => toggleId(s, o.id))}
                 />
-                <Link href={`/orcamentos/${o.id}`} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1">
+                <button
+                  type="button"
+                  onClick={() => abrir({ tipo: "orcamento", id: o.id })}
+                  className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 text-left"
+                >
                   <span className="w-16 font-mono text-xs text-ink-subtle">{docNumber(o.numero)}</span>
                   <span className="min-w-0 flex-1 basis-40">
                     <span className="block truncate font-medium">{o.cliente ?? t("Cliente não definido")}</span>
@@ -139,7 +144,7 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
                     {relativeDays(o.data)}
                   </span>
                   <span className="w-24 text-right font-medium tabular-nums">{money(o.valor_total)}</span>
-                </Link>
+                </button>
               </li>
             ))}
           </ul>

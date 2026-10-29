@@ -797,6 +797,28 @@ export type Database = {
       }
     }
     Views: {
+      os_lista: {
+        Row: {
+          busca: string | null
+          categorias: string[] | null
+          cliente: string | null
+          cliente_id: string | null
+          created_at: string | null
+          data_entrega: string | null
+          data_inicio: string | null
+          data_recebimento: string | null
+          id: string | null
+          numero: number | null
+          recebido: boolean | null
+          relato: string | null
+          servicos: string[] | null
+          status: Database["public"]["Enums"]["os_status"] | null
+          telefone: string | null
+          valor_recebido: number | null
+          valor_total: number | null
+        }
+        Relationships: []
+      }
       clientes_resumo: {
         Row: {
           bairro: string | null
@@ -823,6 +845,26 @@ export type Database = {
     }
     Functions: {
       baixar_recebimentos_do_dia: { Args: never; Returns: number }
+      buscar_clientes: {
+        Args: { p_q: string; p_limite?: number }
+        Returns: { id: string; nome: string; telefone: string; bairro: string | null; cidade: string | null }[]
+      }
+      buscar_tudo: { Args: { p_q: string }; Returns: Json }
+      clientes_resumo_geral: { Args: { p_hoje: string }; Returns: Json }
+      dashboard_resumo: {
+        Args: { p_inicio: string; p_fim: string; p_ant_inicio: string; p_ant_fim: string; p_semanal?: boolean }
+        Returns: Json
+      }
+      melhores_clientes: {
+        Args: { p_limite?: number }
+        Returns: { id: string; nome: string; total: number; qtd: number; ultimo: string }[]
+      }
+      notificacoes: { Args: { p_hoje: string }; Returns: Json }
+      os_contagens: {
+        Args: { p_busca?: string; p_numero?: number; p_de?: string; p_ate?: string; p_categoria?: string }
+        Returns: { status: Database["public"]["Enums"]["os_status"]; qtd: number }[]
+      }
+      sem_acento: { Args: { t: string }; Returns: string }
       finalizar_os: {
         Args: { p_os_id: string }
         Returns: Database["public"]["Enums"]["os_status"]
