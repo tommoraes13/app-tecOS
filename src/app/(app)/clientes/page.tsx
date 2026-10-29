@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Users } from "lucide-react";
-import { PlaceholderScreen } from "../placeholder";
+import { createClient } from "@/lib/supabase/server";
+import { ClientesList } from "./clientes-list";
 
 export const metadata: Metadata = { title: "Clientes" };
 
-export default function Page() {
-  return (
-    <PlaceholderScreen
-      title="Clientes"
-      description="Seus clientes e os equipamentos de cada um."
-      icon={Users}
-      emptyTitle="Nenhum cliente cadastrado"
-      emptyText="Cadastre clientes aqui ou direto na criação de uma OS."
-      cta="Novo cliente"
-    />
-  );
+export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ abrir?: string }> }) {
+  const { abrir } = await searchParams;
+  const supabase = await createClient();
+  const { data } = await supabase.from("clientes_resumo").select("*").order("nome");
+  return <ClientesList clientes={data ?? []} abrirId={abrir ?? null} />;
 }
