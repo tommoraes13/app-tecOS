@@ -22,10 +22,10 @@ export default async function DashboardPage() {
         description="Resumo dos seus atendimentos no período."
         actions={
           <>
-            <ButtonLink href="/orcamentos" variant="outline">
+            <ButtonLink href="/orcamentos/novo" variant="outline">
               Novo orçamento
             </ButtonLink>
-            <ButtonLink href="/servicos" variant="cta" icon={<Plus />}>
+            <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />}>
               Novo atendimento
             </ButtonLink>
           </>
