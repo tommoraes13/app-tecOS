@@ -20,11 +20,23 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - name: Tipos
-        run: npx tsc --noEmit
-      - name: Build
-        run: npm run build
+      - name: Tipos e build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
           NEXT_TELEMETRY_DISABLED: 1
+        run: |
+          set -o pipefail
+          status=0
+          npx tsc --noEmit --pretty false 2>&1 | tee tipos.log || status=1
+          if [ $status -eq 0 ]; then
+            npm run build 2>&1 | tee build.log || status=1
+          fi
+          if [ $status -ne 0 ]; then
+            for f in tipos.log build.log; do
+              [ -s "$f" ] || continue
+              msg=$(grep -vE '^\s*$' "$f" | tail -80 | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+              echo "::error title=$f::$msg"
+            done
+            exit 1
+          fi
