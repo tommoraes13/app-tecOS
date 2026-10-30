@@ -29,7 +29,7 @@ Regras fechadas na Fase 1:
 - Tokens em `src/app/globals.css` (`:root` e `.dark`), expostos como classes: `bg-surface`, `text-ink-muted`, `border-border-control`, `bg-brand-gradient`…
 - Botão com degradê (`variant="cta"`) no máximo um por tela. Formulários concluem com `variant="dark"`.
 - Seções de formulário começam fechadas e abrem com switch. Criar = modal centralizado; ver detalhes = janela central só de leitura (useViewer) com botão Editar.
-- Degradê da marca (botão cta, card de destaque, ícone): azul (`--cta-from/via/to`). O resto da identidade continua verde.
+- Degradê da marca (botão cta, card de destaque, ícone): verde (`--brand-900` → `--brand-600`). O azul foi testado e descartado pelo dono.
 - Cores de apoio além do verde: status da OS e categorias de serviço têm cor própria; valores recebidos em verde, a receber em amarelo, desconto em vermelho.
 - Valores (constantes) usados no servidor não podem vir de arquivos "use client".
 - Celular: menu hambúrguer, controles com 44px de altura, modais em tela cheia, tabelas viram lista de cards.
