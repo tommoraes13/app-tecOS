@@ -21,13 +21,15 @@ const TELAS = [
   { href: "/servicos", label: "Atendimentos", palavras: "servicos prestados atendimentos os ordens" },
   { href: "/servicos/novo", label: "Novo atendimento", palavras: "criar atendimento os ordem servico" },
   { href: "/clientes", label: "Clientes", palavras: "clientes contatos" },
-  { href: "/cadastros/servicos", label: "Cadastro de Serviços", palavras: "catalogo cadastro servicos precos" },
+  { href: "/cadastros/servicos", label: "Tabela de Preços", palavras: "catalogo cadastro servicos precos tabela ticket" },
   { href: "/cadastros/produtos", label: "Cadastro de Produtos", palavras: "catalogo cadastro produtos pecas estoque" },
   { href: "/cadastros/templates", label: "Cadastro de Modelos", palavras: "catalogo cadastro templates checklist modelos" },
-  { href: "/precificacao", label: "Tabela de Preços", palavras: "tabela precificacao precos visita km deslocamento" },
-  { href: "/meu-negocio", label: "Meu Negócio", palavras: "empresa negocio garantia endereco cnpj" },
-  { href: "/minha-conta", label: "Minha Conta", palavras: "conta perfil foto senha idioma moeda fuso tema" },
-  { href: "/meu-plano", label: "Meu Plano", palavras: "plano assinatura pagamento upgrade" },
+  { href: "/meu-negocio/precificacao", label: "Configurar Precificação", palavras: "precificacao metodo hora tecnica visita km deslocamento livre" },
+  { href: "/meu-negocio", label: "Meu Negócio", palavras: "empresa negocio dados logo garantia endereco cnpj" },
+  { href: "/minha-conta", label: "Minha Conta", palavras: "conta perfil foto idioma moeda fuso" },
+  { href: "/minha-conta?aba=aparencia", label: "Aparência", palavras: "tema claro escuro aparencia" },
+  { href: "/minha-conta?aba=plano", label: "Meu Plano", palavras: "plano assinatura pagamento upgrade" },
+  { href: "/minha-conta?aba=dados", label: "Alterar dados", palavras: "senha trocar alterar dados sair 24h" },
 ];
 
 type Resultados = {
@@ -146,7 +148,7 @@ export function BuscaGlobal({ compact = false }: { compact?: boolean }) {
       })),
       ...res.servicos.map<Item>((s) => ({
         key: `s${s.id}`,
-        grupo: t("Cadastro de Serviços"),
+        grupo: t("Tabela de Preços"),
         icon: Wrench,
         titulo: s.nome,
         sub: s.codigo ?? undefined,

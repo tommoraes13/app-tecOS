@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 import {
+  metodoComVisita,
+  metodoValido,
   newKey,
   type CatalogoProduto,
   type CatalogoServico,
@@ -22,13 +24,16 @@ export async function carregarApoio(supabase: Client, clienteId?: string | null)
       : supabase.rpc("buscar_clientes", { p_q: "", p_limite: 20 }),
     supabase.from("cadastro_servicos").select("id, nome, codigo, valor, tempo_medio_min").eq("ativo", true).order("nome"),
     supabase.from("cadastro_produtos").select("id, nome, codigo, valor_venda").eq("ativo", true).order("nome"),
-    supabase.from("meu_negocio").select("valor_visita, duracao_visita_min, cobrar_visita, garantia_meses_padrao").maybeSingle(),
+    supabase.from("meu_negocio").select("tipo_precificacao, valor_hora, valor_visita, duracao_visita_min, cobrar_visita, garantia_meses_padrao").maybeSingle(),
     supabase.from("numeracao").select("proxima_os, proximo_orcamento").maybeSingle(),
   ]);
+  const precificacao = metodoValido(mn.data?.tipo_precificacao);
   const padroes: Padroes = {
+    precificacao,
+    valor_hora: Number(mn.data?.valor_hora ?? 0),
     valor_visita: mn.data?.valor_visita ?? 0,
     duracao_visita_min: mn.data?.duracao_visita_min ?? 60,
-    cobrar_visita: mn.data?.cobrar_visita ?? false,
+    cobrar_visita: metodoComVisita(precificacao),
     garantia_meses: mn.data?.garantia_meses_padrao ?? 3,
   };
   return {
@@ -43,6 +48,7 @@ export async function carregarApoio(supabase: Client, clienteId?: string | null)
 
 export function formularioVazio(numero: number, padroes: Padroes, clienteId: string | null, hoje = todayISO()): DocForm {
   return {
+    precificacao: padroes.precificacao,
     numero,
     cliente_id: clienteId,
     relato: "",
@@ -67,11 +73,8 @@ export function formularioVazio(numero: number, padroes: Padroes, clienteId: str
     desconto_valor: 0,
     garantia_meses: padroes.garantia_meses,
     valor_total: 0,
-    valor_total_manual: false,
+    valor_total_manual: padroes.precificacao === "livre",
     data_entrega: "",
-    recebido: false,
-    data_recebimento: "",
-    valor_recebido: null,
     observacoes: "",
   };
 }
@@ -118,6 +121,7 @@ export async function carregarAtendimento(supabase: Client, id: string, servicos
 
   const form: DocForm = {
     id: os.id,
+    precificacao: metodoValido(os.precificacao),
     numero: os.numero,
     cliente_id: os.cliente_id,
     relato: os.relato ?? "",
@@ -150,9 +154,6 @@ export async function carregarAtendimento(supabase: Client, id: string, servicos
     valor_total: os.valor_total,
     valor_total_manual: os.valor_total_manual,
     data_entrega: os.data_entrega ?? "",
-    recebido: os.recebido,
-    data_recebimento: os.data_recebimento ?? "",
-    valor_recebido: os.valor_recebido,
     observacoes: os.observacoes ?? "",
   };
   if (form.visitas.length === 0) {
@@ -165,7 +166,14 @@ export async function carregarOrcamento(
   supabase: Client,
   id: string,
   servicos: CatalogoServico[] = [],
-  padroes: Padroes = { valor_visita: 0, duracao_visita_min: 60, cobrar_visita: false, garantia_meses: 3 },
+  padroes: Padroes = {
+    precificacao: "servico_visita",
+    valor_hora: 0,
+    valor_visita: 0,
+    duracao_visita_min: 60,
+    cobrar_visita: true,
+    garantia_meses: 3,
+  },
 ) {
   const { data: orc } = await supabase.from("base_orcamentos").select("*").eq("id", id).maybeSingle();
   if (!orc) return null;
@@ -181,6 +189,7 @@ export async function carregarOrcamento(
   const form: DocForm = {
     ...vazio,
     id: orc.id,
+    precificacao: metodoValido(orc.precificacao),
     relato: orc.relato ?? "",
     data: orc.data,
     servicos_ativos: servicosItens.length > 0,

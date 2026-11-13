@@ -57,6 +57,16 @@ async function main() {
     console.log(`${variante.tipo}: ${buf.length} bytes`);
     if (variante.tipo === "os") writeFileSync(saida, buf);
   }
+  // Modelo para celular, com serviços cobrados por hora.
+  {
+    const logo = { data: pngSolido(64, [11, 95, 134]), format: "png" as const };
+    const porHora = { ...dados, porHora: true, servicos: dados.servicos.map((i) => ({ ...i, quantidade: 1.5, valor_unitario: 80 })) };
+    const el = createElement(DocumentoPDF, { d: porHora, geradoEm: "29/10/2026 às 10:00", logo, formato: "celular" as const });
+    const buf = await renderToBuffer(el as unknown as Parameters<typeof renderToBuffer>[0]);
+    if (buf.length < 2000 || buf.subarray(0, 4).toString() !== "%PDF") throw new Error("PDF para celular inválido");
+    console.log(`os (celular): ${buf.length} bytes`);
+    writeFileSync(saida.replace(/\.pdf$/, "-celular.pdf"), buf);
+  }
   // Mesmo documento em inglês e em dólar.
   const el = createElement(DocumentoPDF, {
     d: dados,

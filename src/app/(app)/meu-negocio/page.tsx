@@ -12,7 +12,7 @@ export default async function MeuNegocioPage() {
   const [{ data: negocio }, { t }] = await Promise.all([supabase.from("meu_negocio").select("*").maybeSingle(), getI18n()]);
   return (
     <>
-      <PageHeader icon={Briefcase} title={t("Meu Negócio")} description={t("Dados da empresa que saem nos PDFs e a garantia padrão.")} />
+      <PageHeader icon={Briefcase} title={t("Meu Negócio")} />
       {negocio ? (
         <div className="grid gap-6">
           <LogoNegocio userId={negocio.user_id} logoPath={negocio.logo_url} nome={negocio.nome_fantasia || negocio.razao_social} />

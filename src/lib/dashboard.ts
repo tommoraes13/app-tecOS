@@ -11,7 +11,7 @@ export const PERIODOS = [
 export type Periodo = (typeof PERIODOS)[number]["value"];
 
 export function periodoValido(v: string | undefined): Periodo {
-  return PERIODOS.some((p) => p.value === v) ? (v as Periodo) : "semana";
+  return PERIODOS.some((p) => p.value === v) ? (v as Periodo) : "30";
 }
 
 /** Início e fim do período (inclusive) e o período anterior de mesmo tamanho. */

@@ -158,11 +158,11 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Field label={t("Nome de exibição")} htmlFor="pf-nome" hint={t("Aparece na saudação do Dashboard e no menu da conta")}>
+            <Field label={t("Nome de exibição")} htmlFor="pf-nome">
               <Input id="pf-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder={t("Exemplo: Everton")} />
             </Field>
           </div>
-          <Field label={t("Idioma")} htmlFor="pf-idioma" hint={t("Idioma das telas, do PDF e das mensagens")}>
+          <Field label={t("Idioma")} htmlFor="pf-idioma">
             <Select id="pf-idioma" value={idioma} onChange={(e) => setIdioma(e.target.value)}>
               {LOCALES.map((l) => (
                 <option key={l} value={l}>
@@ -178,7 +178,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
               <option value="EUR">{t("Euro (€)")}</option>
             </Select>
           </Field>
-          <Field label={t("Fuso horário")} htmlFor="pf-fuso" hint={t("Usado para datas, agenda e saudação")}>
+          <Field label={t("Fuso horário")} htmlFor="pf-fuso">
             <Select id="pf-fuso" value={fuso} onChange={(e) => setFuso(e.target.value)}>
               <optgroup label={t("Brasil")}>
                 {FUSOS_BR.map(([v, l]) => (

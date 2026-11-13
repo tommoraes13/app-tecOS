@@ -27,6 +27,8 @@ export type PdfDados = {
   visita: number | null;
   total: number;
   totalManual: boolean;
+  /** Hora Técnica: nos serviços, quantidade = horas e valor = valor da hora */
+  porHora: boolean;
   dataEntrega: string | null;
   recebido: { valor: number; data: string | null } | null;
 };
@@ -120,6 +122,7 @@ export async function carregarPdf(
     visita: header.cobrar_visita ? header.valor_visita : null,
     total: header.valor_total,
     totalManual: header.valor_total_manual,
+    porHora: header.precificacao === "hora_visita",
     dataEntrega: os?.data_entrega ?? null,
     recebido: os && os.recebido ? { valor: os.valor_recebido ?? os.valor_total, data: os.data_recebimento } : null,
   };

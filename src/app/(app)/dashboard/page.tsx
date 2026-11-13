@@ -67,7 +67,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <PageHeader
         icon={{ morning: Sun, afternoon: Sunset, evening: Moon }[fmt.dayPart()]}
         title={`${saudacao}${nome ? `, ${nome}` : ""}!`}
-        description={t("{inicio} a {fim}", { inicio: fmt.date(m.r.inicio), fim: fmt.date(m.r.fim) })}
         actionsClassName="w-full flex-nowrap sm:w-auto"
         actions={
           <>
@@ -86,7 +85,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         items={PERIODOS.map((p) => ({
           value: p.value,
           label: t(p.label),
-          href: p.value === "semana" ? "/dashboard" : `/dashboard?periodo=${p.value}`,
+          href: p.value === "30" ? "/dashboard" : `/dashboard?periodo=${p.value}`,
         }))}
       />
 

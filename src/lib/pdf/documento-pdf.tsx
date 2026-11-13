@@ -48,6 +48,25 @@ const s = StyleSheet.create({
   footerLeft: { position: "absolute", bottom: 24, left: 40, fontSize: 7.5, color: C.subtle },
 });
 
+/**
+ * Formato para celular: página estreita e alta (proporção de tela de celular), uma coluna,
+ * letras um pouco maiores e itens empilhados em vez de tabela.
+ */
+const CEL = { width: 360, height: 760 };
+const m = StyleSheet.create({
+  page: { paddingTop: 22, paddingBottom: 34, paddingHorizontal: 20, fontSize: 10.5, color: C.ink, fontFamily: "Helvetica", lineHeight: 1.4 },
+  header: { paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: C.brand, marginBottom: 12 },
+  logo: { width: 44, height: 44, objectFit: "contain" },
+  empresaNome: { fontSize: 14, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  docLinha: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 10 },
+  docNum: { fontSize: 20, lineHeight: 1.1, fontFamily: "Helvetica-Bold", color: C.brand },
+  item: { paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: C.border },
+  itemConta: { flexDirection: "row", justifyContent: "space-between", marginTop: 2 },
+  totais: { marginTop: 6 },
+  assinatura: { borderTopWidth: 1, borderTopColor: C.muted, paddingTop: 4, textAlign: "center", fontSize: 9, color: C.muted, marginTop: 30 },
+  footerLeft: { position: "absolute", bottom: 14, left: 20, right: 20, fontSize: 7, color: C.subtle },
+});
+
 function enderecoLinha(
   e: {
   endereco: string | null;
@@ -78,15 +97,53 @@ function doc(v: string | null) {
   return v ?? "";
 }
 
-function Tabela({ titulo, itens, semValores, t, fmt }: { titulo: string; itens: PdfItem[]; semValores: boolean; t: T; fmt: Fmt }) {
+function Tabela({
+  titulo,
+  itens,
+  semValores,
+  porHora = false,
+  cel = false,
+  t,
+  fmt,
+}: {
+  titulo: string;
+  itens: PdfItem[];
+  semValores: boolean;
+  porHora?: boolean;
+  cel?: boolean;
+  t: T;
+  fmt: Fmt;
+}) {
   if (itens.length === 0) return null;
+  const qtd = (n: number) => (porHora ? `${fmt.number(n, 2)} h` : fmt.number(n, 2));
+  if (cel) {
+    return (
+      <View style={s.section}>
+        <Text style={s.sectionTitle}>{titulo.toUpperCase()}</Text>
+        {itens.map((i, k) => (
+          <View key={k} style={m.item} wrap={false}>
+            <Text style={s.bold}>{i.descricao}</Text>
+            {i.equipamento ? <Text style={s.small}>{i.equipamento}</Text> : null}
+            <View style={m.itemConta}>
+              <Text style={s.small}>
+                {semValores
+                  ? `${porHora ? t("Horas") : t("Qtd.")}: ${qtd(i.quantidade)}`
+                  : `${qtd(i.quantidade)} × ${fmt.money(i.valor_unitario)}${porHora ? ` ${t("por hora")}` : ""}`}
+              </Text>
+              {semValores ? null : <Text>{fmt.money(i.quantidade * i.valor_unitario)}</Text>}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  }
   return (
     <View style={s.section} wrap={false}>
       <Text style={s.sectionTitle}>{titulo.toUpperCase()}</Text>
       <View style={s.tableHead}>
         <Text style={[s.th, s.cDesc]}>{t("Descrição")}</Text>
-        <Text style={[s.th, s.cQtd]}>{t("Qtd.")}</Text>
-        {semValores ? null : <Text style={[s.th, s.cVal]}>{t("Valor unit.")}</Text>}
+        <Text style={[s.th, s.cQtd]}>{porHora ? t("Horas") : t("Qtd.")}</Text>
+        {semValores ? null : <Text style={[s.th, s.cVal]}>{porHora ? t("Valor/hora") : t("Valor unit.")}</Text>}
         {semValores ? null : <Text style={[s.th, s.cVal]}>{t("Subtotal")}</Text>}
       </View>
       {itens.map((i, k) => (
@@ -95,7 +152,7 @@ function Tabela({ titulo, itens, semValores, t, fmt }: { titulo: string; itens: 
             <Text>{i.descricao}</Text>
             {i.equipamento ? <Text style={s.small}>{i.equipamento}</Text> : null}
           </View>
-          <Text style={s.cQtd}>{fmt.number(i.quantidade, 2)}</Text>
+          <Text style={s.cQtd}>{qtd(i.quantidade)}</Text>
           {semValores ? null : <Text style={s.cVal}>{fmt.money(i.valor_unitario)}</Text>}
           {semValores ? null : <Text style={s.cVal}>{fmt.money(i.quantidade * i.valor_unitario)}</Text>}
         </View>
@@ -111,8 +168,11 @@ export function DocumentoPDF({
   t = createT(null),
   fmt = createFormat(DEFAULT_PREFS),
   logo = null,
+  formato = "a4",
 }: {
   d: PdfDados;
+  /** "a4" (folha comum) ou "celular" (estreito e alto, para ler e mandar pelo celular) */
+  formato?: "a4" | "celular";
   geradoEm: string;
   t?: T;
   fmt?: Fmt;
@@ -128,13 +188,38 @@ export function DocumentoPDF({
   const somaProdutos = d.produtos.reduce((a, i) => a + i.quantidade * i.valor_unitario, 0);
   const titulo = (isOS ? t("Ordem de serviço") : t("Orçamento")).toUpperCase();
   const numero = isOS ? t("OS {n}", { n: docNumber(d.numero) }) : t("ORC {n}", { n: docNumber(d.numero) });
+  const cel = formato === "celular";
 
   return (
     <Document title={`${numero} - ${nomeEmpresa}`} author={nomeEmpresa} creator="TecDesk">
-      <Page size="A4" style={s.page}>
-        <Text style={s.footerLeft} fixed>
+      <Page size={cel ? [CEL.width, CEL.height] : "A4"} style={cel ? m.page : s.page}>
+        <Text style={cel ? m.footerLeft : s.footerLeft} fixed>
           {`${numero} · ${t("gerado em {quando}", { quando: geradoEm })}`}
         </Text>
+        {cel ? (
+          <View style={m.header}>
+            <View style={s.empresaLinha}>
+              {logo ? <Image src={logo} style={m.logo} /> : null}
+              <View style={{ flex: 1 }}>
+                <Text style={m.empresaNome}>{nomeEmpresa}</Text>
+                {n?.cpf_cnpj ? <Text style={s.small}>{doc(n.cpf_cnpj)}</Text> : null}
+                <Text style={s.small}>{[n?.telefone ? phone(n.telefone) : null, n?.email].filter(Boolean).join("  ·  ")}</Text>
+              </View>
+            </View>
+            <View style={m.docLinha}>
+              <View>
+                <Text style={s.docTipo}>{titulo}</Text>
+                <Text style={m.docNum}>{docNumber(d.numero)}</Text>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={s.small}>
+                  {isOS ? t("Início") : t("Data")}: {date(d.data)}
+                </Text>
+                {isOS && d.status ? <Text style={s.small}>{t(OS_STATUS[d.status].label)}</Text> : null}
+              </View>
+            </View>
+          </View>
+        ) : (
         <View style={s.header}>
           <View style={s.empresaLinha}>
           {logo ? <Image src={logo} style={s.logo} /> : null}
@@ -156,6 +241,7 @@ export function DocumentoPDF({
             {isOS && d.status ? <Text style={s.small}>{t("Status")}: {t(OS_STATUS[d.status].label)}</Text> : null}
           </View>
         </View>
+        )}
 
         <View style={[s.section, s.box]}>
           <Text style={s.sectionTitle}>{t("Cliente").toUpperCase()}</Text>
@@ -200,10 +286,10 @@ export function DocumentoPDF({
           </View>
         ) : null}
 
-        <Tabela titulo={t("Serviços")} itens={d.servicos} semValores={semValores} t={t} fmt={fmt} />
-        <Tabela titulo={t("Produtos")} itens={d.produtos} semValores={semValores} t={t} fmt={fmt} />
+        <Tabela titulo={t("Serviços")} itens={d.servicos} semValores={semValores} porHora={d.porHora} cel={cel} t={t} fmt={fmt} />
+        <Tabela titulo={t("Produtos")} itens={d.produtos} semValores={semValores} cel={cel} t={t} fmt={fmt} />
 
-        <View style={s.totais} wrap={false}>
+        <View style={cel ? m.totais : s.totais} wrap={false}>
           {!semValores ? (
             <>
               {d.servicos.length > 0 ? (
@@ -279,7 +365,13 @@ export function DocumentoPDF({
           </View>
         ) : null}
 
-        {isOS ? (
+        {isOS && cel ? (
+          <View wrap={false}>
+            <Text style={m.assinatura}>{nomeEmpresa}</Text>
+            <Text style={m.assinatura}>{d.cliente?.nome ?? t("Cliente")}</Text>
+          </View>
+        ) : null}
+        {isOS && !cel ? (
           <View style={s.assinaturas} wrap={false}>
             <Text style={s.assinatura}>{nomeEmpresa}</Text>
             <Text style={s.assinatura}>{d.cliente?.nome ?? t("Cliente")}</Text>

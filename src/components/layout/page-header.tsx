@@ -10,16 +10,14 @@ export function TitleIcon({ icon: Icon }: { icon: LucideIcon }) {
   );
 }
 
-/** Cabeçalho de toda tela: ícone + título + contexto à esquerda, ações à direita. */
+/** Cabeçalho de toda tela: ícone + título à esquerda, ações à direita (sem subtítulo). */
 export function PageHeader({
   title,
-  description,
   actions,
   icon,
   actionsClassName,
 }: {
   title: string;
-  description?: string;
   actions?: React.ReactNode;
   icon?: LucideIcon;
   /** Classes extras do grupo de botões (ex.: dois botões lado a lado no celular). */
@@ -31,7 +29,6 @@ export function PageHeader({
         {icon ? <TitleIcon icon={icon} /> : null}
         <div className="min-w-0">
           <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.02em] lg:text-[28px] lg:leading-[34px]">{title}</h1>
-          {description ? <p className="mt-1 text-[13px] leading-[18px] text-ink-subtle">{description}</p> : null}
         </div>
       </div>
       {actions ? <div className={cn("flex flex-wrap items-center gap-2", actionsClassName)}>{actions}</div> : null}

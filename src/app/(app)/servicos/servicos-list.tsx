@@ -121,18 +121,12 @@ export function ServicosList({
   }
 
   const filtrosAtivos = Boolean(filtros.de || filtros.ate || filtros.cat);
-  const semFiltro = !filtros.q && !filtrosAtivos;
 
   return (
     <>
       <PageHeader
         icon={Wrench}
         title={t("Atendimentos")}
-        description={
-          semFiltro
-            ? `${somaTodos === 1 ? t("1 atendimento") : t("{n} atendimentos", { n: somaTodos })} · ${t("{n} em andamento", { n: contagens.em_andamento })}`
-            : undefined
-        }
         actions={
           <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />}>
             {t("Novo atendimento")}

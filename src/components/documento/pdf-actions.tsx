@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Download, FileText, Loader2, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, FileText, Loader2, Share2, Smartphone } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 import { docNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,27 @@ export function PdfActions({
   const { t } = useI18n();
   const [sharing, setSharing] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const url = `/api/pdf/${tipo}/${id}`;
-  const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(numero)}.pdf`;
+  // Modelo do PDF: folha A4 ou estreito para celular (lembrado neste aparelho).
+  const [formato, setFormato] = useState<"a4" | "celular">("a4");
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("tecdesk:pdf-formato") === "celular") setFormato("celular");
+    } catch {
+      // sem armazenamento: fica A4
+    }
+  }, []);
+  function escolher(f: "a4" | "celular") {
+    setFormato(f);
+    try {
+      window.localStorage.setItem("tecdesk:pdf-formato", f);
+    } catch {
+      // ignora
+    }
+  }
+  const cel = formato === "celular";
+  const url = `/api/pdf/${tipo}/${id}${cel ? "?formato=celular" : ""}`;
+  const baixarUrl = `/api/pdf/${tipo}/${id}?baixar=1${cel ? "&formato=celular" : ""}`;
+  const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(numero)}${cel ? "-celular" : ""}.pdf`;
 
   async function compartilhar() {
     setErro(null);
@@ -55,12 +74,35 @@ export function PdfActions({
 
   return (
     <div className={cn("grid gap-1.5", className)}>
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-muted p-1" role="radiogroup" aria-label={t("Modelo do PDF")}>
+        {(
+          [
+            { v: "a4", label: t("PDF A4"), icon: FileText },
+            { v: "celular", label: t("PDF para celular"), icon: Smartphone },
+          ] as const
+        ).map((o) => (
+          <button
+            key={o.v}
+            type="button"
+            role="radio"
+            aria-checked={formato === o.v}
+            onClick={() => escolher(o.v)}
+            className={cn(
+              "inline-flex h-9 items-center justify-center gap-1.5 rounded-full text-[13px] font-medium",
+              formato === o.v ? "bg-surface text-ink shadow-card" : "text-ink-muted hover:text-ink",
+            )}
+          >
+            <o.icon className="size-3.5" />
+            {o.label}
+          </button>
+        ))}
+      </div>
       <div className="flex gap-2">
         <a href={url} target="_blank" rel="noreferrer" className={btn}>
           <FileText className="size-4" />
           {t("Ver PDF")}
         </a>
-        <a href={`${url}?baixar=1`} className={btn} aria-label={t("Baixar PDF")}>
+        <a href={baixarUrl} className={btn} aria-label={t("Baixar PDF")}>
           <Download className="size-4" />
           {t("Baixar")}
         </a>

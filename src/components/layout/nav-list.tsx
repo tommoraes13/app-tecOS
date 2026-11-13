@@ -47,7 +47,10 @@ function NavGroup({ item, pathname, onNavigate }: { item: NavItem; pathname: str
       {open ? (
         <div className="grid gap-0.5 pt-0.5 pr-1.5 pb-1.5 pl-9">
           {item.children?.map((c) => {
-            const active = pathname === c.href || pathname.startsWith(`${c.href}/`);
+            // Ativo: o filho com o endereço mais específico que bate com a tela atual.
+            const bate = (h: string) => pathname === h || pathname.startsWith(`${h}/`);
+            const melhor = item.children?.filter((x) => bate(x.href)).sort((a, b) => b.href.length - a.href.length)[0];
+            const active = melhor?.href === c.href;
             return (
               <Link
                 key={c.href}

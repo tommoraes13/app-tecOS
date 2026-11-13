@@ -22,11 +22,7 @@ export async function salvarAtendimento(f: DocForm): Promise<ActionResult<{ id: 
     if (erro) return { ok: false, error: erro };
     const { supabase } = await requireUser();
     const t = totais(f);
-    // Regra: OS marcada como Finalizado conta como recebida (valor total, data de hoje).
-    if (f.status === "finalizado" && !f.recebido) {
-      const hoje = (await getI18n()).fmt.today();
-      f = { ...f, recebido: true, valor_recebido: f.valor_recebido ?? t.total, data_recebimento: hoje, data_entrega: f.data_entrega || hoje };
-    }
+    // Recebimento: o banco decide pelo status (Finalizado = recebido o total; outro status = a receber).
 
     const header = {
       numero: f.numero,
@@ -34,6 +30,7 @@ export async function salvarAtendimento(f: DocForm): Promise<ActionResult<{ id: 
       relato: txt(f.relato),
       data_inicio: f.data,
       status: f.status,
+      precificacao: f.precificacao,
       distancia_km: f.distancia_km,
       cobrar_visita: f.cobrar_visita,
       valor_visita: f.valor_visita,
@@ -49,9 +46,6 @@ export async function salvarAtendimento(f: DocForm): Promise<ActionResult<{ id: 
       valor_total: t.total,
       valor_total_manual: f.valor_total_manual,
       data_entrega: f.data_entrega || null,
-      recebido: f.recebido,
-      data_recebimento: f.recebido ? f.data_recebimento || null : null,
-      valor_recebido: f.recebido ? (f.valor_recebido ?? t.total) : null,
       observacoes: txt(f.observacoes),
     };
 
@@ -131,40 +125,26 @@ export async function salvarAtendimento(f: DocForm): Promise<ActionResult<{ id: 
   }
 }
 
-/** Salva e aplica as regras do botão Finalizar OS (definidas na Fase 1). */
+/**
+ * Finalizar OS: pergunta se o pagamento já foi recebido.
+ * Recebido → Finalizado; ainda não → Aguardando Pagamento.
+ */
 export async function finalizarAtendimento(
   f: DocForm,
+  recebido: boolean,
 ): Promise<ActionResult<{ id: string; numero: number; status: Enums<"os_status"> }>> {
-  const salvo = await salvarAtendimento(f);
+  const status: Enums<"os_status"> = recebido ? "finalizado" : "aguardando_pagamento";
+  const hoje = (await getI18n()).fmt.today();
+  const salvo = await salvarAtendimento({ ...f, status, data_entrega: f.data_entrega || hoje });
   if (!salvo.ok) return salvo;
-  try {
-    const { supabase } = await requireUser();
-    const { data, error } = await supabase.rpc("finalizar_os", { p_os_id: salvo.data.id });
-    if (error || !data) return fail(error, "A OS foi salva, mas não foi possível finalizar.");
-    revalidatePath("/servicos");
-    revalidatePath("/dashboard");
-    return { ok: true, data: { ...salvo.data, status: data } };
-  } catch (e) {
-    return fail(e);
-  }
+  return { ok: true, data: { ...salvo.data, status } };
 }
 
 export async function alterarStatus(id: string, status: Enums<"os_status">): Promise<ActionResult> {
   try {
     const { supabase } = await requireUser();
-    const extra: { recebido?: boolean; data_recebimento?: string; data_entrega?: string } = {};
-    if (status === "finalizado") {
-      // Regra: Finalizado conta como recebido hoje (o banco completa valor e entrega se faltarem).
-      const { data: atual } = await supabase.from("base_atendimentos").select("recebido").eq("id", id).maybeSingle();
-      if (atual && !atual.recebido) {
-        const hoje = (await getI18n()).fmt.today();
-        Object.assign(extra, { recebido: true, data_recebimento: hoje });
-      }
-    }
-    const { error } = await supabase
-      .from("base_atendimentos")
-      .update({ status, finalizado_em: status === "finalizado" ? new Date().toISOString() : null, ...extra })
-      .eq("id", id);
+    // O banco marca/desmarca o recebimento conforme o status.
+    const { error } = await supabase.from("base_atendimentos").update({ status }).eq("id", id);
     if (error) return fail(error);
     revalidatePath("/servicos");
     revalidatePath("/dashboard");

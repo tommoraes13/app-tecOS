@@ -32,6 +32,8 @@ export type SessionUser = {
   id: string;
   email: string | null;
   name: string | null;
+  /** Quando a pessoa entrou com a senha (segundos desde 1970), para a opção "sair depois de 24 h". */
+  loginEm: number | null;
 };
 
 /**
@@ -45,9 +47,13 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const c = data?.claims;
   if (!c?.sub) return null;
   const meta = (c.user_metadata ?? {}) as Record<string, unknown>;
+  // "amr" guarda como e quando a pessoa se autenticou; o mais recente é o login atual.
+  const amr = Array.isArray((c as { amr?: unknown }).amr) ? ((c as { amr: { timestamp?: number }[] }).amr) : [];
+  const tempos = amr.map((a) => Number(a.timestamp)).filter((n) => Number.isFinite(n) && n > 0);
   return {
     id: c.sub,
     email: typeof c.email === "string" ? c.email : null,
     name: typeof meta.name === "string" ? meta.name : null,
+    loginEm: tempos.length ? Math.max(...tempos) : null,
   };
 });

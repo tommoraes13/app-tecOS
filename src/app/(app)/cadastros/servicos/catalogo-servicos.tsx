@@ -288,7 +288,7 @@ export function CatalogoServicos({ servicos, abrirId = null }: { servicos: Servi
             <Field label={t("Valor do serviço")} htmlFor="sv-valor">
               <MoneyInput id="sv-valor" value={editing.valor} onChange={(v) => set({ valor: v })} />
             </Field>
-            <Field label={t("Tempo médio")} htmlFor="sv-tempo" hint={t("Soma na duração sugerida da visita")}>
+            <Field label={t("Tempo médio")} htmlFor="sv-tempo">
               <Select
                 id="sv-tempo"
                 value={editing.tempo_medio_min ?? ""}

@@ -22,6 +22,7 @@ export async function salvarOrcamento(f: DocForm): Promise<ActionResult<{ id: st
       cliente_id: f.cliente_id,
       relato: txt(f.relato),
       data: f.data,
+      precificacao: f.precificacao,
       cobrar_visita: f.cobrar_visita,
       valor_visita: f.valor_visita,
       despesas_ativas: f.despesas_ativas,

@@ -120,7 +120,7 @@ export function TopBarActions({ user, compact = false }: { user: TopBarUser; com
               <ItemLink href="/minha-conta" icon={UserRound} onClick={close}>
                 {t("Minha Conta")}
               </ItemLink>
-              <ItemLink href="/meu-plano" icon={CreditCard} onClick={close}>
+              <ItemLink href="/minha-conta?aba=plano" icon={CreditCard} onClick={close}>
                 {t("Meu Plano")}
               </ItemLink>
               <div className="flex h-11 items-center justify-between gap-2 rounded-lg px-3 text-sm font-medium lg:h-10">

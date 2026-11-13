@@ -144,7 +144,6 @@ export function ClientesList({
       <PageHeader
         icon={Users}
         title={t("Clientes")}
-        description={t("Seus clientes, os equipamentos de cada um e o histórico de atendimentos.")}
       />
 
       <Resumo r={resumo} />

@@ -83,7 +83,6 @@ export function LogoNegocio({ userId, logoPath, nome }: { userId: string; logoPa
     <Card className="grid gap-4 p-5 sm:p-6">
       <div>
         <h2 className="text-[15px] font-semibold">{t("Logotipo")}</h2>
-        <p className="text-[13px] text-ink-subtle">{t("Aparece no topo das OS e dos orçamentos em PDF.")}</p>
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-muted">
@@ -132,7 +131,7 @@ export function LogoNegocio({ userId, logoPath, nome }: { userId: string; logoPa
         </div>
       </div>
       {gerado !== null ? (
-        <p className="text-xs text-ink-subtle">{t("Opção {n} de {total}, com as iniciais do nome fantasia.", { n: (passo - 1) % TOTAL_LOGOS + 1, total: TOTAL_LOGOS })}</p>
+        <p className="text-xs text-ink-subtle">{t("Opção {n} de {total}", { n: (passo - 1) % TOTAL_LOGOS + 1, total: TOTAL_LOGOS })}</p>
       ) : null}
       {msg ? <Feedback kind={msg.kind}>{msg.text}</Feedback> : null}
     </Card>

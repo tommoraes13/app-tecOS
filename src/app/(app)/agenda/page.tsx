@@ -39,11 +39,6 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
       <PageHeader
         icon={CalendarDays}
         title={t("Minha Agenda")}
-        description={
-          proximas.length === 1
-            ? t("1 visita nos próximos {dias} dias", { dias })
-            : t("{n} visitas nos próximos {dias} dias", { n: proximas.length, dias })
-        }
         actions={
           <ButtonLink href="/servicos/novo" variant="cta" icon={<Plus />}>
             {t("Novo atendimento")}

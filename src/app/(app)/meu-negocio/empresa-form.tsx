@@ -62,13 +62,13 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
         <section className="grid gap-3">
           <h2 className="text-[15px] font-semibold">{t("Identificação")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t("Nome fantasia")} htmlFor="nf" hint={t("Aparece no topo dos PDFs")}>
+            <Field label={t("Nome fantasia")} htmlFor="nf">
               <Input id="nf" value={form.nome_fantasia} onChange={(e) => set({ nome_fantasia: e.target.value })} />
             </Field>
             <Field label={t("Razão social")} htmlFor="rs">
               <Input id="rs" value={form.razao_social} onChange={(e) => set({ razao_social: e.target.value })} />
             </Field>
-            <Field label={t("CPF ou CNPJ")} htmlFor="doc" hint={t("Opcional")}>
+            <Field label={t("CPF ou CNPJ")} htmlFor="doc">
               <Input
                 id="doc"
                 inputMode="numeric"
@@ -77,7 +77,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
                 onChange={(e) => set({ cpf_cnpj: e.target.value.replace(/[^\d./-]/g, "") })}
               />
             </Field>
-            <Field label={t("Região de atendimento")} htmlFor="km" hint={t("Raio em km a partir do seu endereço")}>
+            <Field label={t("Região de atendimento")} htmlFor="km">
               <Input
                 id="km"
                 inputMode="decimal"
@@ -94,7 +94,7 @@ export function EmpresaForm({ negocio }: { negocio: Tables<"meu_negocio"> }) {
         <section className="grid gap-3">
           <h2 className="text-[15px] font-semibold">{t("Garantia")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t("Garantia padrão")} htmlFor="gar" hint={t("Vem preenchida em cada nova OS e orçamento")}>
+            <Field label={t("Garantia padrão")} htmlFor="gar">
               <Select
                 id="gar"
                 value={form.garantia_meses_padrao}

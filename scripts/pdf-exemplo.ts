@@ -29,7 +29,8 @@ export const dados: PdfDados = {
     estado: "SP",
     regiao_atendimento_km: 20,
     logo_url: null,
-    tipo_precificacao: "por_servico",
+    tipo_precificacao: "servico_visita",
+    valor_hora: 80,
     valor_visita: 60,
     duracao_visita_min: 60,
     cobrar_visita: true,
@@ -69,7 +70,8 @@ export const dados: PdfDados = {
   visita: 60,
   total: 549,
   totalManual: false,
+  porHora: false,
   dataEntrega: "2026-10-29",
-  recebido: { valor: 300, data: "2026-10-29" },
+  recebido: null,
 };
 

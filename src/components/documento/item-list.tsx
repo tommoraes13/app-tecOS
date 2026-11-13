@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Combobox, type ComboItem } from "@/components/ui/combobox";
 import { MoneyInput, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
-import { newKey, type ItemForm } from "@/lib/documento";
+import { horasDoServico, newKey, type ItemForm } from "@/lib/documento";
 import { useI18n } from "@/i18n/client";
+import { duration } from "@/lib/format";
 
 export type CatalogEntry = { id: string; nome: string; codigo: string | null; valor: number; tempo_min: number | null };
 export type EquipOption = { id: string; nome: string };
@@ -19,20 +20,27 @@ export function ItemList({
   onChange,
   catalogo,
   equipamentos,
+  valorHora,
+  semValor = false,
 }: {
   kind: "servico" | "produto";
   itens: ItemForm[];
   onChange: (itens: ItemForm[]) => void;
   catalogo: CatalogEntry[];
   equipamentos: EquipOption[];
+  /** Hora Técnica: cada serviço vira horas (tempo médio) × valor da hora */
+  valorHora?: number;
+  /** Livre: o total é digitado; os itens não têm valor */
+  semValor?: boolean;
 }) {
   const { t, fmt } = useI18n();
   const sv = kind === "servico";
+  const porHora = sv && valorHora !== undefined;
   const comboItems: ComboItem[] = catalogo.map((c) => ({
     id: c.id,
     label: c.nome,
     sublabel: c.codigo ?? undefined,
-    right: fmt.money(c.valor),
+    right: semValor ? undefined : porHora ? (c.tempo_min ? duration(c.tempo_min) : undefined) : fmt.money(c.valor),
   }));
 
   const patch = (key: string, p: Partial<ItemForm>) => onChange(itens.map((i) => (i.key === key ? { ...i, ...p } : i)));
@@ -40,7 +48,15 @@ export function ItemList({
   function add() {
     onChange([
       ...itens,
-      { key: newKey(), catalogId: null, descricao: "", quantidade: 1, valor_unitario: 0, equipamento_id: null, tempo_min: null },
+      {
+        key: newKey(),
+        catalogId: null,
+        descricao: "",
+        quantidade: 1,
+        valor_unitario: porHora ? (valorHora ?? 0) : 0,
+        equipamento_id: null,
+        tempo_min: null,
+      },
     ]);
   }
 
@@ -69,7 +85,16 @@ export function ItemList({
                     onSelect={(sel) => {
                       if (!sel) return patch(item.key, { catalogId: null, descricao: "", tempo_min: null });
                       const c = catalogo.find((x) => x.id === sel.id);
-                      if (c) patch(item.key, { catalogId: c.id, descricao: c.nome, valor_unitario: c.valor, tempo_min: c.tempo_min });
+                      if (!c) return;
+                      if (porHora)
+                        patch(item.key, {
+                          catalogId: c.id,
+                          descricao: c.nome,
+                          quantidade: horasDoServico(c.tempo_min),
+                          valor_unitario: valorHora ?? 0,
+                          tempo_min: c.tempo_min,
+                        });
+                      else patch(item.key, { catalogId: c.id, descricao: c.nome, valor_unitario: c.valor, tempo_min: c.tempo_min });
                     }}
                   />
                 </div>
@@ -83,25 +108,24 @@ export function ItemList({
                 </button>
               </div>
             </Field>
-            {!item.catalogId && item.descricao ? (
-              <p className="mt-1 text-xs text-ink-subtle">{t("Item avulso, fora do catálogo.")}</p>
-            ) : null}
           </div>
-          <div className="sm:col-span-4">
-            <Field label={t("Quantidade")} htmlFor={`${item.key}-qtd`}>
-              <QtyInput
-                id={`${item.key}-qtd`}
-                value={item.quantidade}
-                onChange={(n) => patch(item.key, { quantidade: n })}
-              />
+          <div className={semValor ? "sm:col-span-6" : "sm:col-span-4"}>
+            <Field label={porHora ? t("Horas") : t("Quantidade")} htmlFor={`${item.key}-qtd`}>
+              {porHora ? (
+                <HorasInput id={`${item.key}-qtd`} value={item.quantidade} onChange={(n) => patch(item.key, { quantidade: n })} />
+              ) : (
+                <QtyInput id={`${item.key}-qtd`} value={item.quantidade} onChange={(n) => patch(item.key, { quantidade: n })} />
+              )}
             </Field>
           </div>
-          <div className="sm:col-span-4">
-            <Field label={t("Valor unitário")} htmlFor={`${item.key}-valor`}>
-              <MoneyInput id={`${item.key}-valor`} value={item.valor_unitario} onChange={(v) => patch(item.key, { valor_unitario: v })} />
-            </Field>
-          </div>
-          <div className="sm:col-span-4">
+          {!semValor ? (
+            <div className="sm:col-span-4">
+              <Field label={porHora ? t("Valor da hora") : t("Valor unitário")} htmlFor={`${item.key}-valor`}>
+                <MoneyInput id={`${item.key}-valor`} value={item.valor_unitario} onChange={(v) => patch(item.key, { valor_unitario: v })} />
+              </Field>
+            </div>
+          ) : null}
+          <div className={semValor ? "sm:col-span-6" : "sm:col-span-4"}>
             <Field label={t("Vincular equipamento")} htmlFor={`${item.key}-eq`}>
               <Select
                 id={`${item.key}-eq`}
@@ -118,7 +142,7 @@ export function ItemList({
               </Select>
             </Field>
           </div>
-          {item.quantidade !== 1 ? (
+          {!semValor && item.quantidade !== 1 ? (
             <p className="text-right text-xs text-ink-muted tabular-nums sm:col-span-12">
               {t("Subtotal")} {fmt.money(item.quantidade * item.valor_unitario)}
             </p>
@@ -161,6 +185,40 @@ function QtyInput({ id, value, onChange }: { id: string; value: number; onChange
         }}
       />
       <button type="button" aria-label={t("Aumentar")} className={btn} onClick={() => onChange(value + 1)}>
+        <Plus className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+/** Horas com passos de meia hora; aceita digitar "1,5". */
+function HorasInput({ id, value, onChange }: { id: string; value: number; onChange: (n: number) => void }) {
+  const { t, fmt } = useI18n();
+  const mostrar = (n: number) => fmt.number(n, n % 1 ? 2 : 0);
+  const [text, setText] = useState(mostrar(value));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setText(mostrar(value)), [value]);
+  const btn =
+    "inline-grid size-11 shrink-0 place-items-center rounded-md border border-border bg-surface text-ink-muted hover:text-ink lg:size-10";
+  return (
+    <div className="flex gap-1.5">
+      <button type="button" aria-label={t("Diminuir")} className={btn} onClick={() => onChange(Math.max(0.5, value - 0.5))}>
+        <Minus className="size-4" />
+      </button>
+      <Input
+        id={id}
+        inputMode="decimal"
+        className="text-center tabular-nums"
+        value={text}
+        onChange={(e) => {
+          const limpo = e.target.value.replace(/[^\d,.]/g, "").slice(0, 6);
+          setText(limpo);
+          const n = Number(limpo.replace(",", "."));
+          if (Number.isFinite(n) && n > 0) onChange(Math.round(n * 100) / 100);
+        }}
+        onBlur={() => setText(mostrar(value))}
+      />
+      <button type="button" aria-label={t("Aumentar")} className={btn} onClick={() => onChange(value + 0.5)}>
         <Plus className="size-4" />
       </button>
     </div>

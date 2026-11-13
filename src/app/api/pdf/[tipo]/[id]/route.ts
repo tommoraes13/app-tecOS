@@ -11,7 +11,10 @@ import { createClient, getCurrentUser } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** GET /api/pdf/os/<id> ou /api/pdf/orcamento/<id>. Com ?baixar=1 o navegador baixa em vez de abrir. */
+/**
+ * GET /api/pdf/os/<id> ou /api/pdf/orcamento/<id>. Com ?baixar=1 o navegador baixa em vez de abrir;
+ * com ?formato=celular sai o modelo estreito para celular.
+ */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ tipo: string; id: string }> }) {
   const { tipo, id } = await params;
   if (tipo !== "os" && tipo !== "orcamento") return new NextResponse("Documento inválido", { status: 404 });
@@ -26,10 +29,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const geradoEm = t("{data} às {hora}", { data: fmt.date(fmt.today()), hora: fmt.time(new Date()) });
   const logo = await baixarLogo(dados.negocio?.logo_url ?? null);
-  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt, logo });
+  const formato = request.nextUrl.searchParams.get("formato") === "celular" ? "celular" : "a4";
+  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt, logo, formato });
   const buffer = await renderToBuffer(element as unknown as Parameters<typeof renderToBuffer>[0]);
 
-  const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(dados.numero)}.pdf`;
+  const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(dados.numero)}${formato === "celular" ? "-celular" : ""}.pdf`;
   const baixar = request.nextUrl.searchParams.has("baixar");
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

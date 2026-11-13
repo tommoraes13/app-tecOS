@@ -8,7 +8,7 @@ import en from "../src/i18n/messages/en";
 import es from "../src/i18n/messages/es";
 import { mainNav, secondaryNav } from "../src/components/layout/nav-items";
 import { PERIODOS } from "../src/lib/dashboard";
-import { STATUS_OPCOES } from "../src/lib/documento";
+import { METODOS, STATUS_OPCOES } from "../src/lib/documento";
 import { CAMPOS, ESTADO_CAMPOS, GRUPOS, NOME_PLACEHOLDER, PROVEDORES, SUBTIPOS_REDE } from "../src/lib/equipamentos";
 import { CANAL_LABEL, CATEGORIA_LABEL, EQUIPAMENTO_CURTO, EQUIPAMENTO_LABEL, ESTADO_LABEL } from "../src/lib/labels";
 import { OS_STATUS } from "../src/lib/status";
@@ -38,6 +38,7 @@ for (const campos of Object.values(CAMPOS)) {
 for (const s of Object.values(OS_STATUS)) add(s.label, "status");
 for (const s of STATUS_OPCOES) add(s.label, "status");
 for (const p of PERIODOS) add(p.label, "dashboard");
+for (const m of METODOS) add(m.label, "precificacao");
 for (const item of [...mainNav, ...secondaryNav]) {
   add(item.label, "menu");
   for (const c of item.children ?? []) add(c.label, "menu");
@@ -71,15 +72,16 @@ for (const arq of arquivos) {
     }
   }
   // Funções que devolvem mensagens (dbMessage, validações, translateError) e listas fixas de telas.
-  if (/actions\.ts$|login-form\.tsx$/.test(arq)) {
+  if (/actions\.ts$|login-form\.tsx$|criar-conta-form\.tsx$/.test(arq)) {
     for (const m of src.matchAll(new RegExp(String.raw`return\s+` + STR, "g"))) add(JSON.parse(`"${m[1]}"`), arq);
     for (const m of src.matchAll(new RegExp(String.raw`fallback\s*=\s*` + STR, "g"))) add(JSON.parse(`"${m[1]}"`), arq);
   }
-  for (const nome of ["INCLUSO", "FUSOS_BR"]) {
-    const bloco = src.match(new RegExp(String.raw`const ${nome} = \[([\s\S]*?)\]( as const)?;`));
+  // Listas fixas de textos (planos, fusos, explicação dos métodos, menu do rodapé).
+  for (const nome of ["INCLUSO", "FUSOS_BR", "EXPLICA", "ITENS"]) {
+    const bloco = src.match(new RegExp(String.raw`const ${nome}\b[^=]*= [\[{]([\s\S]*?)[\]}]( as const)?;`));
     if (!bloco) continue;
     for (const m of bloco[1].matchAll(new RegExp(STR, "g"))) {
-      if (nome === "FUSOS_BR" && m[1].includes("/")) continue; // America/Sao_Paulo é valor, não texto
+      if (m[1].includes("/")) continue; // America/Sao_Paulo e /dashboard são valores, não texto
       add(JSON.parse(`"${m[1]}"`), arq);
     }
   }

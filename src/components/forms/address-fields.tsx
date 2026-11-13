@@ -147,7 +147,7 @@ export function AddressFields({
         ) : null}
       </div>
       <div className="sm:col-span-4">
-        <Field label={t("Endereço")} htmlFor={id("endereco")} hint={t("Digite para buscar; escolha uma sugestão para preencher o resto")}>
+        <Field label={t("Endereço")} htmlFor={id("endereco")}>
           <div ref={caixa} className="relative">
             <Input
               id={id("endereco")}

@@ -22,8 +22,28 @@ export type VisitaForm = {
   auto: boolean;
 };
 
+/** Método de precificação (Configurar Precificação, em Meu Negócio). */
+export const METODOS = [
+  { value: "servico", label: "Valor do Serviço" },
+  { value: "servico_visita", label: "Valor do Serviço + Visita Técnica" },
+  { value: "hora_visita", label: "Hora Técnica + Visita Técnica" },
+  { value: "livre", label: "Livre" },
+] as const;
+export type Metodo = (typeof METODOS)[number]["value"];
+export function metodoValido(v: string | null | undefined): Metodo {
+  return METODOS.some((m) => m.value === v) ? (v as Metodo) : "servico_visita";
+}
+export const metodoComVisita = (m: Metodo) => m === "servico_visita" || m === "hora_visita";
+
+/** Horas cobradas de um serviço pelo tempo médio (arredonda para 15 min; sem tempo = 1 h). */
+export function horasDoServico(tempoMin: number | null) {
+  if (!tempoMin || tempoMin <= 0) return 1;
+  return Math.max(0.25, Math.round((tempoMin / 60) * 4) / 4);
+}
+
 export type DocForm = {
   id?: string;
+  precificacao: Metodo;
   numero: number;
   cliente_id: string | null;
   relato: string;
@@ -51,10 +71,8 @@ export type DocForm = {
   garantia_meses: number | null;
   valor_total: number;
   valor_total_manual: boolean;
+  /** preenchida sozinha ao finalizar (base da garantia); não aparece na tela */
   data_entrega: string;
-  recebido: boolean;
-  data_recebimento: string;
-  valor_recebido: number | null;
   observacoes: string;
 };
 
@@ -104,8 +122,10 @@ export function descontoEmReais(subtotal: number, tipo: string, valor: number) {
 
 /** Duração sugerida: visita padrão + tempo médio dos serviços × quantidade, arredondada para 30 min. */
 export function duracaoSugerida(f: DocForm, duracaoPadrao: number) {
+  // Hora Técnica: a quantidade já é o número de horas.
+  const porHora = f.precificacao === "hora_visita";
   const servicos = f.servicos_ativos
-    ? f.servicos.reduce((s, i) => s + (i.tempo_min ?? 0) * Math.max(1, Math.round(i.quantidade)), 0)
+    ? f.servicos.reduce((s, i) => s + (porHora ? i.quantidade * 60 : (i.tempo_min ?? 0) * Math.max(1, Math.round(i.quantidade))), 0)
     : 0;
   const total = duracaoPadrao + servicos;
   return Math.max(30, Math.ceil(total / 30) * 30);
@@ -124,8 +144,38 @@ export type ClienteOpcao = { id: string; nome: string; telefone: string; bairro:
 export type CatalogoServico = { id: string; nome: string; codigo: string | null; valor: number; tempo_medio_min: number | null };
 export type CatalogoProduto = { id: string; nome: string; codigo: string | null; valor_venda: number };
 export type Padroes = {
+  precificacao: Metodo;
+  valor_hora: number;
   valor_visita: number;
   duracao_visita_min: number;
   cobrar_visita: boolean;
   garantia_meses: number;
 };
+
+/**
+ * Troca o método de precificação do documento: liga/desliga a visita, o total livre
+ * e converte os serviços do catálogo entre "valor do serviço" e "horas × valor da hora".
+ */
+export function aplicarMetodo(f: DocForm, metodo: Metodo, padroes: Padroes, catalogo: CatalogoServico[]): DocForm {
+  const precos = new Map(catalogo.map((s) => [s.id, s]));
+  const porHora = metodo === "hora_visita";
+  const eraHora = f.precificacao === "hora_visita";
+  const servicos =
+    porHora === eraHora
+      ? f.servicos
+      : f.servicos.map((i) => {
+          const c = i.catalogId ? precos.get(i.catalogId) : undefined;
+          if (porHora) return { ...i, quantidade: horasDoServico(c?.tempo_medio_min ?? i.tempo_min), valor_unitario: padroes.valor_hora };
+          return { ...i, quantidade: 1, valor_unitario: c ? c.valor : round2(i.quantidade * i.valor_unitario) };
+        });
+  const visita = metodoComVisita(metodo);
+  return {
+    ...f,
+    precificacao: metodo,
+    servicos,
+    cobrar_visita: visita,
+    valor_visita: visita && !f.valor_visita ? padroes.valor_visita : f.valor_visita,
+    valor_total_manual: metodo === "livre",
+    valor_total: metodo === "livre" && !f.valor_total_manual ? totais(f).calculado : f.valor_total,
+  };
+}

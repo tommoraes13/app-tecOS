@@ -4,7 +4,6 @@ import {
   FileText,
   FolderOpen,
   LayoutDashboard,
-  Tags,
   Users,
   Wrench,
   type LucideIcon,
@@ -29,12 +28,21 @@ export const mainNav: NavItem[] = [
     label: "Meu Catálogo",
     icon: FolderOpen,
     children: [
-      { href: "/cadastros/servicos", label: "Serviços" },
+      { href: "/cadastros/servicos", label: "Tabela de Preços" },
       { href: "/cadastros/produtos", label: "Produtos" },
       { href: "/cadastros/templates", label: "Modelos" },
     ],
   },
-  { href: "/precificacao", label: "Tabela de Preços", icon: Tags },
 ];
 
-export const secondaryNav: NavItem[] = [{ href: "/meu-negocio", label: "Meu Negócio", icon: Briefcase }];
+export const secondaryNav: NavItem[] = [
+  {
+    href: "/meu-negocio",
+    label: "Meu Negócio",
+    icon: Briefcase,
+    children: [
+      { href: "/meu-negocio", label: "Dados do Negócio" },
+      { href: "/meu-negocio/precificacao", label: "Configurar Precificação" },
+    ],
+  },
+];

@@ -10,15 +10,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("Entrar") };
 }
 
-export default async function LoginPage() {
-  const { t } = await getI18n();
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expirou?: string }> }) {
+  const [{ t }, { expirou }] = await Promise.all([getI18n(), searchParams]);
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-10">
       <div className="w-full max-w-[400px]">
         <Wordmark className="mb-8 justify-center text-2xl" />
         <div className="rounded-xl bg-surface p-6 shadow-card sm:p-8">
           {hasSupabaseEnv ? (
-            <LoginForm />
+            <LoginForm expirou={expirou === "1"} />
           ) : (
             <div className="space-y-2 text-sm">
               <p className="font-medium">{t("Supabase ainda não configurado")}</p>

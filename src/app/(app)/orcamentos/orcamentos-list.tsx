@@ -70,8 +70,6 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
     );
   }, [aba, q, linhas, aguardando, aprovados]);
 
-  const totalAguardando = aguardando.reduce((s, o) => s + o.valor_total, 0);
-
   function remove() {
     start(async () => {
       const r = await excluirOrcamentos([...selected]);
@@ -87,7 +85,6 @@ export function OrcamentosList({ linhas }: { linhas: OrcamentoLinha[] }) {
       <PageHeader
         icon={FileText}
         title={t("Orçamentos")}
-        description={t("{n} aguardando aceite · {valor} em aberto", { n: aguardando.length, valor: money(totalAguardando) })}
         actions={
           <ButtonLink href="/orcamentos/novo" variant="cta" icon={<Plus />}>
             {t("Novo orçamento")}

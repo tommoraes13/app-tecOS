@@ -11,12 +11,9 @@ import { useI18n } from "@/i18n/client";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-export function ContaForms() {
+/** Aba Alterar dados: só a troca de senha. */
+export function TrocarSenha() {
   const { t } = useI18n();
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const [senha, setSenha] = useState("");
   const [confirma, setConfirma] = useState("");
   const [pending, setPending] = useState(false);
@@ -42,6 +39,36 @@ export function ContaForms() {
     setMsg({ kind: "ok", text: t("Senha alterada.") });
   }
 
+  return (
+      <Card className="p-5 sm:p-6">
+        <form onSubmit={trocarSenha} className="grid gap-3">
+          <h2 className="text-[15px] font-semibold">{t("Alterar senha")}</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={t("Nova senha")} htmlFor="nova">
+              <Input id="nova" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+            </Field>
+            <Field label={t("Repita a nova senha")} htmlFor="conf">
+              <Input id="conf" type="password" autoComplete="new-password" value={confirma} onChange={(e) => setConfirma(e.target.value)} />
+            </Field>
+          </div>
+          {msg ? <Feedback kind={msg.kind}>{msg.text}</Feedback> : null}
+          <div className="flex justify-end">
+            <Button type="submit" variant="dark" disabled={pending} className="w-full sm:w-auto">
+              {pending ? t("Salvando…") : t("Alterar senha")}
+            </Button>
+          </div>
+        </form>
+      </Card>
+  );
+}
+
+/** Aba Aparência: tema claro, escuro ou igual ao aparelho. */
+export function Aparencia() {
+  const { t } = useI18n();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const temas = [
     { value: "light", label: t("Claro@@tema"), icon: Sun },
     { value: "dark", label: t("Escuro"), icon: Moon },
@@ -49,9 +76,8 @@ export function ContaForms() {
   ];
 
   return (
-    <>
       <Card className="grid gap-3 p-5 sm:p-6">
-        <h2 className="text-[15px] font-semibold">{t("Aparência")}</h2>
+        <h2 className="text-[15px] font-semibold">{t("Tema")}</h2>
         <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label={t("Tema")}>
           {temas.map((tema) => {
             const active = mounted && theme === tema.value;
@@ -75,26 +101,5 @@ export function ContaForms() {
           })}
         </div>
       </Card>
-
-      <Card className="p-5 sm:p-6">
-        <form onSubmit={trocarSenha} className="grid gap-3">
-          <h2 className="text-[15px] font-semibold">{t("Trocar senha")}</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t("Nova senha")} htmlFor="nova" hint={t("Mínimo de 6 caracteres")}>
-              <Input id="nova" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
-            </Field>
-            <Field label={t("Repita a nova senha")} htmlFor="conf">
-              <Input id="conf" type="password" autoComplete="new-password" value={confirma} onChange={(e) => setConfirma(e.target.value)} />
-            </Field>
-          </div>
-          {msg ? <Feedback kind={msg.kind}>{msg.text}</Feedback> : null}
-          <div className="flex justify-end">
-            <Button type="submit" variant="dark" disabled={pending} className="w-full sm:w-auto">
-              {pending ? t("Salvando…") : t("Trocar senha")}
-            </Button>
-          </div>
-        </form>
-      </Card>
-    </>
   );
 }

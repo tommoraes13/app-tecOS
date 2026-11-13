@@ -15,7 +15,6 @@ export default async function CadastroProdutosPage({ searchParams }: { searchPar
       <PageHeader
         icon={Package}
         title={t("Cadastro de Produtos")}
-        description={t("Peças e itens que você vende, com custo e preço de venda. Aparecem para escolher na OS e no orçamento.")}
       />
       <CatalogoProdutos key={abrir ?? ""} produtos={data ?? []} abrirId={abrir ?? null} />
     </>

@@ -32,6 +32,7 @@ export type Database = {
           numero: number
           observacoes: string | null
           orcamento_id: string | null
+          precificacao: string
           recebido: boolean
           relato: string | null
           status: Database["public"]["Enums"]["os_status"]
@@ -64,6 +65,7 @@ export type Database = {
           numero: number
           observacoes?: string | null
           orcamento_id?: string | null
+          precificacao?: string
           recebido?: boolean
           relato?: string | null
           status?: Database["public"]["Enums"]["os_status"]
@@ -96,6 +98,7 @@ export type Database = {
           numero?: number
           observacoes?: string | null
           orcamento_id?: string | null
+          precificacao?: string
           recebido?: boolean
           relato?: string | null
           status?: Database["public"]["Enums"]["os_status"]
@@ -248,6 +251,7 @@ export type Database = {
           id: string
           numero: number
           observacoes: string | null
+          precificacao: string
           relato: string | null
           updated_at: string
           user_id: string
@@ -272,6 +276,7 @@ export type Database = {
           id?: string
           numero: number
           observacoes?: string | null
+          precificacao?: string
           relato?: string | null
           updated_at?: string
           user_id?: string
@@ -296,6 +301,7 @@ export type Database = {
           id?: string
           numero?: number
           observacoes?: string | null
+          precificacao?: string
           relato?: string | null
           updated_at?: string
           user_id?: string
@@ -420,9 +426,10 @@ export type Database = {
           razao_social: string | null
           regiao_atendimento_km: number | null
           telefone: string | null
-          tipo_precificacao: string | null
+          tipo_precificacao: string
           updated_at: string
           user_id: string
+          valor_hora: number
           valor_km: number
           valor_visita: number
           garantia_meses_padrao: number
@@ -445,9 +452,10 @@ export type Database = {
           razao_social?: string | null
           regiao_atendimento_km?: number | null
           telefone?: string | null
-          tipo_precificacao?: string | null
+          tipo_precificacao?: string
           updated_at?: string
           user_id: string
+          valor_hora?: number
           valor_km?: number
           valor_visita?: number
           garantia_meses_padrao?: number
@@ -470,9 +478,10 @@ export type Database = {
           razao_social?: string | null
           regiao_atendimento_km?: number | null
           telefone?: string | null
-          tipo_precificacao?: string | null
+          tipo_precificacao?: string
           updated_at?: string
           user_id?: string
+          valor_hora?: number
           valor_km?: number
           valor_visita?: number
           garantia_meses_padrao?: number
@@ -770,6 +779,7 @@ export type Database = {
           idioma: string
           moeda: string
           nome_exibicao: string | null
+          sair_apos_24h: boolean
           updated_at: string
           user_id: string
         }
@@ -780,6 +790,7 @@ export type Database = {
           idioma?: string
           moeda?: string
           nome_exibicao?: string | null
+          sair_apos_24h?: boolean
           updated_at?: string
           user_id: string
         }
@@ -790,6 +801,7 @@ export type Database = {
           idioma?: string
           moeda?: string
           nome_exibicao?: string | null
+          sair_apos_24h?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -844,7 +856,6 @@ export type Database = {
       }
     }
     Functions: {
-      baixar_recebimentos_do_dia: { Args: never; Returns: number }
       buscar_clientes: {
         Args: { p_q: string; p_limite?: number }
         Returns: { id: string; nome: string; telefone: string; bairro: string | null; cidade: string | null }[]
