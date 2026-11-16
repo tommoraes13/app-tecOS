@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </>
           }
         />
-        <main className="px-4 pt-6 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pt-4 lg:pr-6 lg:pb-16 lg:pl-[288px]">
+        <main className="px-4 pt-6 pb-[calc(128px+env(safe-area-inset-bottom))] lg:pt-4 lg:pr-6 lg:pb-16 lg:pl-[288px]">
           <div className="mx-auto max-w-[1280px]">
             <div className="mb-6 hidden h-16 items-center justify-between gap-4 rounded-xl bg-surface px-3 shadow-card lg:flex">
               <BuscaGlobal />

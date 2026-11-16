@@ -26,7 +26,7 @@ export function MenuRodape() {
   return (
     <nav
       aria-label={t("Menu rápido")}
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-surface px-2 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] shadow-pop lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-surface px-2 pt-1.5 pb-[calc(20px+env(safe-area-inset-bottom))] shadow-pop lg:hidden"
     >
       {ITENS.map((item) => {
         const ativo = item.href === "/servicos" ? pathname === "/servicos" : pathname === item.href || pathname.startsWith(`${item.href}/`);

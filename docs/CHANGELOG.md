@@ -4,6 +4,10 @@ Cada mudança publicada fica registrada aqui, da mais nova para a mais antiga. A
 
 ---
 
+## 16/11/2026: margem de segurança no rodapé do celular
+- Mais espaço embaixo do menu fixo do rodapé e da barra de baixo da OS e do orçamento (cerca de 14 px a mais), para os botões não ficarem colados na beirada da tela.
+- O fim das telas também ganhou mais espaço, para nada ficar escondido atrás das barras.
+
 ## 16/11/2026: especificação completa
 - `docs/REFERENCIA-APP.md` foi reescrito como especificação completa: índice, glossário, cada tela, regras de negócio e todas as tabelas do banco com suas colunas.
 - Sem mudança no app nem no banco.
