@@ -690,6 +690,7 @@ Ficam em `supabase/migrations/`, na ordem em que foram aplicadas:
 **Celular**
 - Menu hambúrguer e menu fixo no rodapé.
 - Controles com 44 px de altura.
+- Barras fixas e rodapés de janelas respeitam a área de segurança do iPhone (`viewport-fit=cover` + `env(safe-area-inset-*)`), com folga extra.
 - Campos com fonte de 16 px (o iPhone não dá zoom ao tocar).
 - Modais em tela cheia.
 - Tabelas viram lista de cards.

@@ -960,10 +960,10 @@ export function DocumentoForm({
       </div>
 
       {/* Celular: ações no fim da página */}
-      <div className="mt-4 pb-28 lg:hidden">{acoes}</div>
+      <div className="mt-4 pb-[calc(112px+env(safe-area-inset-bottom))] lg:hidden">{acoes}</div>
 
       {/* Celular: barra fixa com Voltar, o total e o botão de salvar (com folga do fim da tela) */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-surface px-4 pt-3 pb-[calc(30px+env(safe-area-inset-bottom))] shadow-pop lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-border bg-surface px-4 pt-3 pb-[max(28px,calc(env(safe-area-inset-bottom)+14px))] shadow-pop lg:hidden">
         <Link
           href={base}
           aria-label={t("Voltar")}

@@ -20,6 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Deixa o iPhone informar a área de segurança (risquinho de baixo), usada nas barras fixas.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f3f5f4" },
     { media: "(prefers-color-scheme: dark)", color: "#0b100d" },

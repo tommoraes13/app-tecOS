@@ -54,7 +54,7 @@ export function MobileNav({ actions }: { actions?: React.ReactNode }) {
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-overlay"
           />
-          <div className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col gap-3 rounded-r-xl bg-surface p-3 pt-4 shadow-pop">
+          <div className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col gap-3 rounded-r-xl bg-surface p-3 pt-[max(16px,env(safe-area-inset-top))] pb-[max(16px,calc(env(safe-area-inset-bottom)+8px))] shadow-pop">
             <div className="flex items-center justify-between px-1">
               <Wordmark className="px-2 text-lg" />
               <button

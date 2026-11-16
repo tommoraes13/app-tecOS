@@ -66,7 +66,7 @@ export function Modal({
           size === "lg" && "sm:max-w-[760px]",
         )}
       >
-        <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-2 sm:px-6">
+        <div className="flex items-start justify-between gap-3 px-5 pt-[max(20px,env(safe-area-inset-top))] pb-2 sm:px-6 sm:pt-5">
           <div className="min-w-0">
             {overline ? <div className="font-mono text-xs text-ink-subtle">{overline}</div> : null}
             <h2 id={titleId} className="text-lg leading-[26px] font-semibold">
@@ -84,7 +84,7 @@ export function Modal({
         </div>
         <div className="flex-1 overflow-y-auto px-5 pt-3 pb-5 sm:px-6">{children}</div>
         {footer ? (
-          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">{footer}</div>
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 pt-4 pb-[max(28px,calc(env(safe-area-inset-bottom)+14px))] sm:px-6 sm:pb-4">{footer}</div>
         ) : null}
       </div>
     </div>,
@@ -124,7 +124,7 @@ export function Drawer({
         aria-labelledby={titleId}
         className="relative flex h-dvh w-full flex-col bg-surface shadow-pop sm:h-auto sm:max-w-[440px] sm:rounded-xl"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-5 pt-5 pb-3">
+        <div className="flex items-start justify-between gap-3 border-b border-border px-5 pt-[max(20px,env(safe-area-inset-top))] pb-3 sm:pt-5">
           <div className="min-w-0">
             {overline ? <div className="font-mono text-xs text-ink-subtle">{overline}</div> : null}
             <h2 id={titleId} className="mt-0.5 truncate text-lg leading-[26px] font-semibold">
@@ -144,7 +144,9 @@ export function Drawer({
           </div>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">{children}</div>
-        {footer ? <div className="flex flex-wrap items-center gap-2 border-t border-border px-5 py-4">{footer}</div> : null}
+        {footer ? (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border px-5 pt-4 pb-[max(28px,calc(env(safe-area-inset-bottom)+14px))] sm:pb-4">{footer}</div>
+        ) : null}
       </aside>
     </div>,
     document.body,

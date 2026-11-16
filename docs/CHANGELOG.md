@@ -4,6 +4,11 @@ Cada mudança publicada fica registrada aqui, da mais nova para a mais antiga. A
 
 ---
 
+## 16/11/2026: área de segurança do iPhone
+- O app passa a respeitar a área do "risquinho" de baixo do iPhone (`viewport-fit=cover`). Antes, o celular informava 0 e os botões ficavam colados na beirada.
+- Menu do rodapé, barra da OS e do orçamento, rodapé das janelas (Excluir, Editar, Salvar) e menu lateral ganharam a área de segurança mais uma folga.
+- Janelas em tela cheia e menu lateral também respeitam a área de cima.
+
 ## 16/11/2026: margem de segurança no rodapé do celular
 - Mais espaço embaixo do menu fixo do rodapé e da barra de baixo da OS e do orçamento (cerca de 14 px a mais), para os botões não ficarem colados na beirada da tela.
 - O fim das telas também ganhou mais espaço, para nada ficar escondido atrás das barras.
