@@ -4,6 +4,10 @@ Cada mudança publicada fica registrada aqui, da mais nova para a mais antiga. A
 
 ---
 
+## 16/11/2026: especificação completa
+- `docs/REFERENCIA-APP.md` foi reescrito como especificação completa: índice, glossário, cada tela, regras de negócio e todas as tabelas do banco com suas colunas.
+- Sem mudança no app nem no banco.
+
 ## 12/11/2026: precificação, recebimento pelo status, criar conta e menu do celular
 **Banco:** `20261112000001_precificacao_recebimento_conta.sql`
 
