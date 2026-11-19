@@ -1,8 +1,9 @@
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { LOCALE_COOKIE, normalizeLocale } from "@/i18n/config";
 import { createClient } from "@/lib/supabase/server";
 
-/** Destino do link de confirmação de e-mail: troca o código pela sessão. */
+/** Destino dos links de e-mail (convite, troca de senha): troca o código pela sessão. */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
@@ -21,6 +22,18 @@ export async function GET(request: NextRequest) {
         res.cookies.set(LOCALE_COOKIE, idioma, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
       }
       return res;
+    }
+  }
+
+  // Link no formato token_hash (convite ou troca de senha com o modelo de e-mail do Supabase ajustado).
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+  if (tokenHash && type) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (!error) {
+      const destino = type === "invite" ? "/definir-senha" : type === "recovery" ? "/minha-conta?aba=dados" : next;
+      return NextResponse.redirect(`${origin}${destino}`);
     }
   }
 

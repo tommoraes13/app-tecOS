@@ -8,7 +8,6 @@ import { getPerfil } from "@/lib/perfil";
 import { Aparencia, TrocarSenha } from "./conta-forms";
 import { PerfilForm } from "./perfil-form";
 import { PlanoCard } from "./plano-card";
-import { Sair24hForm } from "./sair-24h-form";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -37,10 +36,7 @@ export default async function MinhaContaPage({ searchParams }: { searchParams: P
       />
       <div className="grid max-w-[720px] gap-6">
         {aba === "conta" ? (
-          <>
-            <PerfilForm perfil={perfil} />
-            <Sair24hForm ligado={perfil.sairApos24h} />
-          </>
+<PerfilForm perfil={perfil} />
         ) : null}
         {aba === "aparencia" ? <Aparencia /> : null}
         {aba === "plano" ? <PlanoCard t={t} /> : null}

@@ -181,3 +181,26 @@ export async function vincularEquipamento(osId: string, equipamentoId: string): 
     return fail(e);
   }
 }
+
+/** Grava (ou tira) a assinatura do cliente na OS. O arquivo vai direto para a pasta privada do técnico. */
+export async function salvarAssinaturaCliente(osId: string, path: string | null): Promise<ActionResult<{ em: string | null }>> {
+  try {
+    const { supabase, user } = await requireUser();
+    if (path && !new RegExp(`^${user.id}/cliente-${osId}-\\d+\\.png$`).test(path)) return { ok: false, error: "Arquivo inválido." };
+    const { data: atual } = await supabase.from("base_atendimentos").select("assinatura_cliente_path").eq("id", osId).maybeSingle();
+    const em = path ? new Date().toISOString() : null;
+    const { error } = await supabase
+      .from("base_atendimentos")
+      .update({ assinatura_cliente_path: path, assinatura_cliente_em: em })
+      .eq("id", osId);
+    if (error) return fail(error);
+    const antigo = atual?.assinatura_cliente_path;
+    if (antigo && antigo !== path && antigo.startsWith(`${user.id}/`)) {
+      await supabase.storage.from("assinaturas").remove([antigo]);
+    }
+    revalidatePath("/servicos");
+    return { ok: true, data: { em } };
+  } catch (e) {
+    return fail(e);
+  }
+}

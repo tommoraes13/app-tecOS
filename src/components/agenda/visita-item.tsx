@@ -4,9 +4,9 @@ import { useViewer } from "@/components/detalhes/viewer";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { VisitaAgenda } from "@/lib/agenda";
 import { useI18n } from "@/i18n/client";
-import { docNumber, duration } from "@/lib/format";
+import { docNumber } from "@/lib/format";
 
-/** Uma visita técnica na lista: dia, horário, cliente, OS e status. */
+/** Uma visita técnica na lista: dia, cliente, bairro · serviço · valor, OS e status. */
 export function VisitaItem({ v, showDate = true }: { v: VisitaAgenda; showDate?: boolean }) {
   const { t, fmt } = useI18n();
   const { abrir } = useViewer();
@@ -26,9 +26,9 @@ export function VisitaItem({ v, showDate = true }: { v: VisitaAgenda; showDate?:
         <span className="block truncate font-medium">{v.cliente ?? t("Cliente não definido")}</span>
         <span className="block truncate text-xs text-ink-subtle">
           {[
-            v.hora ?? t("Sem horário"),
-            v.duracao_min ? duration(v.duracao_min) : null,
-            [v.bairro, v.cidade].filter(Boolean).join(", ") || null,
+            v.bairro,
+            v.servicos.length ? (v.servicos.length > 1 ? `${v.servicos[0]} +${v.servicos.length - 1}` : v.servicos[0]) : null,
+            v.valor_total ? fmt.money(v.valor_total) : null,
           ]
             .filter(Boolean)
             .join(" · ")}

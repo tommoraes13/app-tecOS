@@ -28,9 +28,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!dados) return new NextResponse(t("Documento não encontrado."), { status: 404 });
 
   const geradoEm = t("{data} às {hora}", { data: fmt.date(fmt.today()), hora: fmt.time(new Date()) });
-  const logo = await baixarLogo(dados.negocio?.logo_url ?? null);
+  const [logo, assEmpresa, assCliente] = await Promise.all([
+    baixarLogo(dados.negocio?.logo_url ?? null),
+    baixarAssinatura(supabase, dados.negocio?.assinatura_path ?? null),
+    baixarAssinatura(supabase, dados.assinaturaClientePath),
+  ]);
+  const assinaturas = { empresa: assEmpresa, cliente: assCliente };
   const formato = request.nextUrl.searchParams.get("formato") === "celular" ? "celular" : "a4";
-  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt, logo, formato });
+  const element = createElement(DocumentoPDF, { d: dados, geradoEm, t, fmt, logo, formato, assinaturas });
   const buffer = await renderToBuffer(element as unknown as Parameters<typeof renderToBuffer>[0]);
 
   const nome = `${tipo === "os" ? t("OS") : t("Orcamento@@arquivo")}-${docNumber(dados.numero)}${formato === "celular" ? "-celular" : ""}.pdf`;
@@ -55,6 +60,20 @@ async function baixarLogo(path: string | null): Promise<{ data: Buffer; format: 
     const format = tipo.includes("png") ? "png" : tipo.includes("jpeg") || tipo.includes("jpg") ? "jpg" : null;
     if (!format) return null;
     return { data: Buffer.from(await res.arrayBuffer()), format };
+  } catch {
+    return null;
+  }
+}
+
+/** Baixa uma assinatura da pasta privada (com o login do técnico). Se falhar, o PDF sai só com a linha. */
+async function baixarAssinatura(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  path: string | null,
+): Promise<{ data: Buffer; format: "png" } | null> {
+  if (!path) return null;
+  try {
+    const { data } = await supabase.storage.from("assinaturas").download(path);
+    return data ? { data: Buffer.from(await data.arrayBuffer()), format: "png" } : null;
   } catch {
     return null;
   }

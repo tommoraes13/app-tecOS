@@ -51,7 +51,12 @@ async function main() {
   const saida = process.argv[2] ?? "teste-os.pdf";
   for (const variante of [dados, { ...dados, tipo: "orcamento" as const, status: null, totalManual: true, recebido: null }]) {
     const logo = { data: pngSolido(64, [11, 95, 134]), format: "png" as const };
-    const el = createElement(DocumentoPDF, { d: variante, geradoEm: "29/10/2026 às 10:00", logo });
+    const el = createElement(DocumentoPDF, {
+      d: variante,
+      geradoEm: "29/10/2026 às 10:00",
+      logo,
+      assinaturas: { empresa: { data: pngSolido(40, [20, 30, 70]), format: "png" as const }, cliente: { data: pngSolido(40, [20, 30, 70]), format: "png" as const } },
+    });
     const buf = await renderToBuffer(el as unknown as Parameters<typeof renderToBuffer>[0]);
     if (buf.length < 2000 || buf.subarray(0, 4).toString() !== "%PDF") throw new Error("PDF inválido");
     console.log(`${variante.tipo}: ${buf.length} bytes`);
@@ -61,7 +66,13 @@ async function main() {
   {
     const logo = { data: pngSolido(64, [11, 95, 134]), format: "png" as const };
     const porHora = { ...dados, porHora: true, servicos: dados.servicos.map((i) => ({ ...i, quantidade: 1.5, valor_unitario: 80 })) };
-    const el = createElement(DocumentoPDF, { d: porHora, geradoEm: "29/10/2026 às 10:00", logo, formato: "celular" as const });
+    const el = createElement(DocumentoPDF, {
+      d: porHora,
+      geradoEm: "29/10/2026 às 10:00",
+      logo,
+      formato: "celular" as const,
+      assinaturas: { empresa: { data: pngSolido(40, [20, 30, 70]), format: "png" as const } },
+    });
     const buf = await renderToBuffer(el as unknown as Parameters<typeof renderToBuffer>[0]);
     if (buf.length < 2000 || buf.subarray(0, 4).toString() !== "%PDF") throw new Error("PDF para celular inválido");
     console.log(`os (celular): ${buf.length} bytes`);

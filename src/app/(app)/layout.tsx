@@ -4,26 +4,18 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopBarActions } from "@/components/layout/top-bar";
 import { PuxarParaAtualizar } from "@/components/layout/puxar-para-atualizar";
-import { redirect } from "next/navigation";
-import { Sair24h } from "@/components/layout/sair-24h";
 import { MenuRodape } from "@/components/layout/menu-rodape";
 import { getPerfil } from "@/lib/perfil";
-
-const DIA_MS = 24 * 60 * 60 * 1000;
 
 /** Moldura das telas logadas: menu lateral + barra superior no computador; hambúrguer no celular. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const perfil = await getPerfil();
-  // Opção "Sair depois de 24 horas": passou do prazo desde o login, encerra a sessão.
-  const expiraEm = perfil?.sairApos24h && perfil.loginEm ? perfil.loginEm * 1000 + DIA_MS : null;
-  if (expiraEm && Date.now() >= expiraEm) redirect("/auth/expirou");
   const user = { nome: perfil?.nome ?? null, email: perfil?.email ?? null, fotoUrl: perfil?.fotoUrl ?? null };
 
   return (
     <ViewerProvider>
       <div className="min-h-dvh">
         <PuxarParaAtualizar />
-        {expiraEm ? <Sair24h expiraEm={expiraEm} /> : null}
         <Sidebar />
         <MobileNav
           actions={

@@ -2,6 +2,7 @@ import { Briefcase } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { createClient } from "@/lib/supabase/server";
 import { EmpresaForm } from "./empresa-form";
+import { AssinaturaNegocio } from "./assinatura-negocio";
 import { LogoNegocio } from "./logo-negocio";
 import { getI18n, pageTitle } from "@/i18n/server";
 
@@ -16,6 +17,7 @@ export default async function MeuNegocioPage() {
       {negocio ? (
         <div className="grid gap-6">
           <LogoNegocio userId={negocio.user_id} logoPath={negocio.logo_url} nome={negocio.nome_fantasia || negocio.razao_social} />
+          <AssinaturaNegocio userId={negocio.user_id} path={negocio.assinatura_path} />
           <EmpresaForm negocio={negocio} />
         </div>
       ) : (

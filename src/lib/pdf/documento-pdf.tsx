@@ -45,6 +45,8 @@ const s = StyleSheet.create({
   totFinalValor: { fontSize: 15, lineHeight: 1.1, fontFamily: "Helvetica-Bold", color: C.brand },
   assinaturas: { flexDirection: "row", justifyContent: "space-between", marginTop: 32 },
   assinatura: { width: 220, borderTopWidth: 1, borderTopColor: C.muted, paddingTop: 4, textAlign: "center", fontSize: 8.5, color: C.muted },
+  assinaturaBloco: { width: 220, alignItems: "center" },
+  assinaturaImg: { height: 46, maxWidth: 200, objectFit: "contain", marginBottom: 2 },
   footerLeft: { position: "absolute", bottom: 24, left: 40, fontSize: 7.5, color: C.subtle },
 });
 
@@ -64,6 +66,8 @@ const m = StyleSheet.create({
   itemConta: { flexDirection: "row", justifyContent: "space-between", marginTop: 2 },
   totais: { marginTop: 6 },
   assinatura: { borderTopWidth: 1, borderTopColor: C.muted, paddingTop: 4, textAlign: "center", fontSize: 9, color: C.muted, marginTop: 30 },
+  assinaturaBloco: { marginTop: 8, alignItems: "stretch" },
+  assinaturaImg: { height: 50, maxWidth: 240, objectFit: "contain", alignSelf: "center", marginBottom: 2 },
   footerLeft: { position: "absolute", bottom: 14, left: 20, right: 20, fontSize: 7, color: C.subtle },
 });
 
@@ -169,6 +173,7 @@ export function DocumentoPDF({
   fmt = createFormat(DEFAULT_PREFS),
   logo = null,
   formato = "a4",
+  assinaturas = {},
 }: {
   d: PdfDados;
   /** "a4" (folha comum) ou "celular" (estreito e alto, para ler e mandar pelo celular) */
@@ -178,6 +183,8 @@ export function DocumentoPDF({
   fmt?: Fmt;
   /** Logotipo do negócio já baixado (PNG ou JPG). */
   logo?: { data: Buffer; format: "png" | "jpg" } | null;
+  /** Assinaturas já baixadas: da empresa (Meu Negócio) e do cliente (assinada na tela). */
+  assinaturas?: { empresa?: { data: Buffer; format: "png" } | null; cliente?: { data: Buffer; format: "png" } | null };
 }) {
   const { money, date } = fmt;
   const isOS = d.tipo === "os";
@@ -365,16 +372,33 @@ export function DocumentoPDF({
           </View>
         ) : null}
 
-        {isOS && cel ? (
+        {/* Assinaturas: na OS, empresa e cliente; no orçamento, só a da empresa (se cadastrada). */}
+        {(isOS || assinaturas.empresa) && cel ? (
           <View wrap={false}>
-            <Text style={m.assinatura}>{nomeEmpresa}</Text>
-            <Text style={m.assinatura}>{d.cliente?.nome ?? t("Cliente")}</Text>
+            <View style={m.assinaturaBloco}>
+              {assinaturas.empresa ? <Image src={assinaturas.empresa} style={m.assinaturaImg} /> : null}
+              <Text style={[m.assinatura, assinaturas.empresa ? { marginTop: 0 } : {}]}>{nomeEmpresa}</Text>
+            </View>
+            {isOS ? (
+              <View style={m.assinaturaBloco}>
+                {assinaturas.cliente ? <Image src={assinaturas.cliente} style={m.assinaturaImg} /> : null}
+                <Text style={[m.assinatura, assinaturas.cliente ? { marginTop: 0 } : {}]}>{d.cliente?.nome ?? t("Cliente")}</Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
-        {isOS && !cel ? (
-          <View style={s.assinaturas} wrap={false}>
-            <Text style={s.assinatura}>{nomeEmpresa}</Text>
-            <Text style={s.assinatura}>{d.cliente?.nome ?? t("Cliente")}</Text>
+        {(isOS || assinaturas.empresa) && !cel ? (
+          <View style={[s.assinaturas, { alignItems: "flex-end" }, isOS ? {} : { justifyContent: "flex-end" }]} wrap={false}>
+            <View style={s.assinaturaBloco}>
+              {assinaturas.empresa ? <Image src={assinaturas.empresa} style={s.assinaturaImg} /> : null}
+              <Text style={s.assinatura}>{nomeEmpresa}</Text>
+            </View>
+            {isOS ? (
+              <View style={s.assinaturaBloco}>
+                {assinaturas.cliente ? <Image src={assinaturas.cliente} style={s.assinaturaImg} /> : null}
+                <Text style={s.assinatura}>{d.cliente?.nome ?? t("Cliente")}</Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
 

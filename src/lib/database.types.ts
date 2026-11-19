@@ -16,6 +16,8 @@ export type Database = {
       base_atendimentos: {
         Row: {
           cliente_id: string | null
+          assinatura_cliente_em: string | null
+          assinatura_cliente_path: string | null
           cobrar_visita: boolean
           created_at: string
           data_entrega: string | null
@@ -49,6 +51,8 @@ export type Database = {
         }
         Insert: {
           cliente_id?: string | null
+          assinatura_cliente_em?: string | null
+          assinatura_cliente_path?: string | null
           cobrar_visita?: boolean
           created_at?: string
           data_entrega?: string | null
@@ -82,6 +86,8 @@ export type Database = {
         }
         Update: {
           cliente_id?: string | null
+          assinatura_cliente_em?: string | null
+          assinatura_cliente_path?: string | null
           cobrar_visita?: boolean
           created_at?: string
           data_entrega?: string | null
@@ -410,6 +416,7 @@ export type Database = {
       meu_negocio: {
         Row: {
           bairro: string | null
+          assinatura_path: string | null
           cep: string | null
           cidade: string | null
           cobrar_visita: boolean
@@ -436,6 +443,7 @@ export type Database = {
         }
         Insert: {
           bairro?: string | null
+          assinatura_path?: string | null
           cep?: string | null
           cidade?: string | null
           cobrar_visita?: boolean
@@ -462,6 +470,7 @@ export type Database = {
         }
         Update: {
           bairro?: string | null
+          assinatura_path?: string | null
           cep?: string | null
           cidade?: string | null
           cobrar_visita?: boolean
@@ -779,7 +788,6 @@ export type Database = {
           idioma: string
           moeda: string
           nome_exibicao: string | null
-          sair_apos_24h: boolean
           updated_at: string
           user_id: string
         }
@@ -790,7 +798,6 @@ export type Database = {
           idioma?: string
           moeda?: string
           nome_exibicao?: string | null
-          sair_apos_24h?: boolean
           updated_at?: string
           user_id: string
         }
@@ -801,7 +808,6 @@ export type Database = {
           idioma?: string
           moeda?: string
           nome_exibicao?: string | null
-          sair_apos_24h?: boolean
           updated_at?: string
           user_id?: string
         }

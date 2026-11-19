@@ -1,7 +1,7 @@
 # TecDesk: especificação completa do app
 
 > Documento único de referência. Cole em outro chat ou IA para dar contexto completo do app.
-> Estado em 16/11/2026. O histórico de mudanças fica em `docs/CHANGELOG.md`.
+> Estado em 19/11/2026. O histórico de mudanças fica em `docs/CHANGELOG.md`.
 
 ## Índice
 
@@ -140,10 +140,10 @@ O menu do rodapé some nas telas de OS e orçamento, que têm barra própria com
 | Rota | Tela | Acesso |
 |---|---|---|
 | `/login` | Entrar | Público |
-| `/criar-conta` | Criar conta | Público |
-| `/auth/callback` | Retorno dos links de e-mail (confirmação, troca de senha) | Público |
+| `/auth/callback` | Retorno dos links de e-mail (convite, troca de senha) | Público |
 | `/auth/signout` | Sair | Logado |
-| `/auth/expirou` | Saída automática depois de 24 h | Logado |
+| `/auth/expirou` | Saída automática depois de 3 dias sem uso | Público |
+| `/definir-senha` | Primeiro acesso de quem foi convidado (nome, negócio, telefone, senha) | Logado |
 | `/dashboard` | Dashboard | Logado |
 | `/servicos` | Lista de atendimentos | Logado |
 | `/servicos/novo` | Novo atendimento | Logado |
@@ -163,22 +163,23 @@ O menu do rodapé some nas telas de OS e orçamento, que têm barra própria com
 | `/precificacao` | Redireciona para `/meu-negocio/precificacao` | Logado |
 | `/meu-plano` | Redireciona para `/minha-conta?aba=plano` | Logado |
 
-Quem não está logado é levado para `/login`. Quem está logado e abre `/login` ou `/criar-conta` vai para `/dashboard`.
+Quem não está logado é levado para `/login`. Quem está logado e abre `/login` vai para `/dashboard`. Não existe tela de criar conta: novos técnicos entram por convite (ver 6.2).
 
 ## 6. Telas, uma por uma
 
 ### 6.1 Entrar (`/login`)
 - Campos: e-mail e senha.
 - "Esqueci minha senha": envia um link por e-mail. Ao abrir, a pessoa entra e cai em Minha Conta › Alterar dados.
-- Link "Criar conta".
-- Mostra um aviso quando a pessoa foi desconectada pela regra das 24 horas.
+- **Sem opção de criar conta.**
+- Mostra um aviso quando a pessoa foi desconectada por ficar mais de 3 dias sem usar o app.
+- Recebe os links de convite e de troca de senha do Supabase que chegam com a sessão no fim do endereço (`#access_token=…`) e leva para a tela certa.
 - Seletor de idioma no rodapé.
 
-### 6.2 Criar conta (`/criar-conta`)
-- Campos: Seu nome, Nome do negócio, Telefone (WhatsApp), E-mail, Senha e Repita a senha.
-- Validações: nome e negócio preenchidos, telefone com DDD, senha com 6 caracteres ou mais, as duas senhas iguais.
-- Ao criar, o banco já monta Meu Negócio (nome fantasia, telefone, e-mail), o perfil (nome de exibição) e a numeração.
-- Se o Supabase exigir confirmação de e-mail, aparece a tela "Confirme seu e-mail". Se não exigir, a pessoa entra direto no Dashboard.
+### 6.2 Novas contas: convite pelo Supabase
+- Ninguém cria conta sozinho. O dono convida pelo painel do Supabase: Authentication › Users › **Invite user**, informando o e-mail.
+- No Supabase, "Allow new users to sign up" deve ficar **desligado** (Authentication › Sign In / Providers). O convite continua funcionando.
+- A pessoa recebe o e-mail, abre o link e cai em **Primeiro acesso** (`/definir-senha`): Seu nome, Nome do negócio, Telefone (WhatsApp), Senha e Repita a senha.
+- O gatilho `handle_new_user` cria Meu Negócio, perfil e numeração no momento do convite; a tela de primeiro acesso completa nome, negócio e telefone.
 
 ### 6.3 Dashboard (`/dashboard`)
 - **Saudação** com o nome de exibição.
@@ -236,7 +237,8 @@ O mesmo componente serve aos dois (`src/components/documento/documento-form.tsx`
 
 **Ações**
 - Status em pílulas (só OS).
-- PDF: escolha entre A4 e celular; botões ver, baixar e compartilhar.
+- PDF da OS: um botão **Compartilhar PDF** (ver 6.16).
+- PDF do orçamento: escolha entre A4 e celular; botões ver, baixar e enviar.
 - Mensagem para WhatsApp: prévia editável, copiar ou enviar para o número do cliente.
 - **Finalizar OS** (só OS): pergunta "O pagamento já foi recebido?".
 - **Transformar em atendimento** (só orçamento).
@@ -247,6 +249,7 @@ O mesmo componente serve aos dois (`src/components/documento/documento-form.tsx`
 ### 6.6 Minha Agenda (`/agenda`)
 - Calendário mensal com as visitas técnicas das OS.
 - Lista "Próximos atendimentos" com quantos dias faltam.
+- Cada visita mostra o cliente e, embaixo, **Bairro · Serviço · Valor**. Com mais de um serviço, aparece o primeiro e a quantidade dos outros (exemplo: "Limpeza interna +3").
 - Botão Novo atendimento.
 - Clicar numa visita abre a OS.
 
@@ -307,6 +310,11 @@ O mesmo componente serve aos dois (`src/components/documento/documento-form.tsx`
   - Aparece no topo dos PDFs.
 - **Dados:** nome fantasia, razão social, CPF/CNPJ, e-mail, telefone, endereço completo, região de atendimento (km) e garantia padrão (meses).
 
+**Assinatura da empresa** (card próprio, abaixo do logotipo):
+- Desenhar com o dedo ou o mouse, ou enviar uma imagem (o app tira o fundo claro e recorta).
+- Fica na pasta privada `assinaturas` e sai em todos os PDFs: na OS, acima da linha da empresa; no orçamento, num bloco de assinatura no fim.
+- Botões: Desenhar assinatura / Assinar de novo, Enviar imagem e Remover.
+
 ### 6.14 Configurar Precificação (`/meu-negocio/precificacao`)
 - **Método de precificação:** 4 cartões de escolha (ver 7.3).
 - **Valor da hora técnica:** aparece só no método por hora.
@@ -318,7 +326,7 @@ O mesmo componente serve aos dois (`src/components/documento/documento-form.tsx`
 
 | Aba | Conteúdo |
 |---|---|
-| **Minha conta** | Foto (reduzida a 256×256), nome de exibição, idioma, moeda, fuso horário; opção "Sair sozinho 24 horas depois de entrar". |
+| **Minha conta** | Foto (reduzida a 256×256), nome de exibição, idioma, moeda e fuso horário. |
 | **Aparência** | Tema Claro, Escuro ou Igual ao aparelho. |
 | **Meu Plano** | Plano Gratuito (fase de testes). Upgrade e cancelamento marcados como "em breve". |
 | **Alterar dados** | Somente a troca de senha. |
@@ -330,6 +338,13 @@ O mesmo componente serve aos dois (`src/components/documento/documento-form.tsx`
   - **A4:** folha comum, itens em tabela.
   - **Celular:** página estreita e alta (360×760 pt), uma coluna, itens empilhados, bom para WhatsApp.
 - A escolha do modelo fica lembrada no aparelho.
+- **Assinaturas no PDF:** a da empresa (Meu Negócio) e, na OS, a do cliente, cada uma acima da sua linha.
+
+**Compartilhar PDF (OS, qualquer status):** um único botão na OS e na janela de visualização. Ele abre uma janela com:
+1. Abas **PDF padrão / PDF mobile**.
+2. **Prévia** do PDF desenhada na tela (com o leitor `pdfjs-dist`, para funcionar igual no iPhone).
+3. **Assinar PDF:** abre um quadro para o cliente assinar com o dedo. A assinatura fica salva na OS e a prévia é refeita já assinada. Depois aparecem "Assinado pelo cliente em …", "Assinar de novo" e a lixeira para remover.
+4. Rodapé: **Baixar OS** e **Enviar OS**. Enviar abre o menu de compartilhar do celular (WhatsApp, salvar em Arquivos etc.); no computador, baixa o arquivo.
 
 ## 7. Regras de negócio
 
@@ -399,10 +414,11 @@ O técnico escolhe o padrão em Configurar Precificação. Cada OS e orçamento 
 - Conta a partir da data de entrega da OS.
 - "Clientes em garantia" na tela Clientes usa essa conta.
 
-### 7.9 Sair depois de 24 horas
-- Opção por conta, **desligada por padrão**.
-- Ligada, o app compara a hora do login com a hora atual e encerra a sessão depois de 24 horas.
-- Funciona tanto ao abrir uma tela quanto com a tela já aberta.
+### 7.9 Saída automática por inatividade
+- Vale para todas as contas, sem opção para desligar.
+- A cada tela aberta, o app guarda a hora do último uso num cookie (`tecdesk_uso`).
+- Se passar **mais de 3 dias** sem abrir o app, a próxima abertura encerra a sessão e mostra o aviso no login.
+- Feito no `src/lib/supabase/middleware.ts`.
 
 ### 7.10 Lembretes (sino)
 - Visitas técnicas de hoje e dos próximos 2 dias, de OS ainda não finalizadas.
@@ -467,6 +483,7 @@ auth.users ─┬─ meu_negocio (1)
 | `email`, `telefone` | texto | |
 | `cep`, `endereco`, `numero`, `complemento`, `bairro`, `cidade`, `estado` | texto | |
 | `logo_url` | texto | Caminho do logotipo no bucket `avatars` |
+| `assinatura_path` | texto | Assinatura da empresa no bucket privado `assinaturas` |
 | `regiao_atendimento_km` | número | Raio de atendimento |
 | `garantia_meses_padrao` | inteiro | Vem preenchida nos documentos novos |
 | `tipo_precificacao` | texto | `servico`, `servico_visita`, `hora_visita` ou `livre` |
@@ -486,7 +503,6 @@ auth.users ─┬─ meu_negocio (1)
 | `idioma` | texto | `pt-BR`, `en` ou `es` |
 | `moeda` | texto | `BRL`, `USD` ou `EUR` |
 | `fuso` | texto | Padrão `America/Sao_Paulo` |
-| `sair_apos_24h` | sim/não | Padrão não |
 
 ### 8.5 `numeracao`
 
@@ -573,6 +589,8 @@ Tem todas as colunas de `base_orcamentos` (exceto `data`) e mais:
 | `valor_recebido` | dinheiro | Igual ao total quando Finalizado |
 | `data_recebimento` | data | Hoje, quando Finalizado |
 | `finalizado_em` | data e hora | |
+| `assinatura_cliente_path` | texto | Assinatura do cliente no bucket privado `assinaturas` |
+| `assinatura_cliente_em` | data e hora | Quando o cliente assinou |
 
 ### 8.12 Itens: `orc_servicos`, `orc_produtos`, `os_servicos`, `os_produtos`
 
@@ -643,7 +661,7 @@ Todas rodam com as permissões de quem chama e não podem ser executadas sem log
 
 | Gatilho | O que faz |
 |---|---|
-| `handle_new_user` | Ao criar a conta, cria `meu_negocio`, `perfil` e `numeracao`, lendo nome, negócio e telefone do cadastro. |
+| `handle_new_user` | Ao criar a conta (convite), cria `meu_negocio`, `perfil` e `numeracao`. |
 | `definir_numero_os`, `definir_numero_orcamento` | Dão o próximo número e avançam a numeração. |
 | `finalizado_marca_recebido` | Aplica a regra de recebimento pelo status (ver 7.2). |
 | `set_updated_at` | Atualiza a data de alteração. |
@@ -654,6 +672,10 @@ Todas rodam com as permissões de quem chama e não podem ser executadas sem log
 - Limite de 512 KB por arquivo; aceita JPEG, PNG e WebP.
 - Cada técnico só grava na pasta `<user_id>/`.
 - Conteúdo: foto de perfil (`foto-*.jpg|webp`) e logotipo (`logo-*.png`).
+- Bucket **privado** `assinaturas` (256 KB, só PNG), também por pasta `<user_id>/`, com leitura só do dono:
+  - `empresa-<data>.png`: assinatura da empresa;
+  - `cliente-<id da OS>-<data>.png`: assinatura do cliente em cada OS.
+- O PDF baixa as assinaturas com o login do técnico.
 
 ### 8.20 Migrações aplicadas
 
@@ -665,6 +687,7 @@ Ficam em `supabase/migrations/`, na ordem em que foram aplicadas:
 4. `20261029000002_resumos_busca_notificacoes.sql`: views, resumos, buscas e lembretes.
 5. `20261030000001_categorias_servico_avatar.sql`: 7 categorias e regras do bucket.
 6. `20261112000001_precificacao_recebimento_conta.sql`: 4 métodos, recebimento pelo status, sair após 24 h e criar conta.
+7. `20261119000001_assinaturas_inatividade.sql`: assinaturas (empresa e cliente), bucket `assinaturas` e remoção de `sair_apos_24h`.
 
 ## 9. Design System
 
@@ -706,7 +729,7 @@ Ficam em `supabase/migrations/`, na ordem em que foram aplicadas:
 
 ```
 src/app/
-  (app)/                    telas logadas (layout com menus, barra, rodapé e regra das 24 h)
+  (app)/                    telas logadas (layout com menus, barra e rodapé)
     dashboard/
     servicos/               atendimentos (lista, novo, [id])
     agenda/
@@ -719,12 +742,13 @@ src/app/
     meu-negocio/precificacao/
     minha-conta/            abas
     meu-plano/  precificacao/   só redirecionam
-  login/  criar-conta/
+  login/  definir-senha/
   auth/callback/  auth/signout/  auth/expirou/
   api/pdf/[tipo]/[id]/      geração do PDF
 src/components/
   layout/      menu lateral, hambúrguer, rodapé, barra superior, busca, sino, cabeçalho
-  documento/   formulário de OS e orçamento, itens, PDF, WhatsApp, aviso de saída
+  documento/   formulário de OS e orçamento, itens, PDF (compartilhar e prévia), WhatsApp, aviso de saída
+  assinatura/  quadro de assinatura
   detalhes/    janelas de visualização
   clientes/    modal de cliente e de equipamento, campo de senha
   forms/       endereço (CEP e sugestões)

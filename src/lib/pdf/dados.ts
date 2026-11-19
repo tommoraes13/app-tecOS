@@ -31,6 +31,8 @@ export type PdfDados = {
   porHora: boolean;
   dataEntrega: string | null;
   recebido: { valor: number; data: string | null } | null;
+  /** assinatura do cliente guardada na OS (pasta privada "assinaturas") */
+  assinaturaClientePath: string | null;
 };
 
 type Client = SupabaseClient<Database>;
@@ -125,5 +127,6 @@ export async function carregarPdf(
     porHora: header.precificacao === "hora_visita",
     dataEntrega: os?.data_entrega ?? null,
     recebido: os && os.recebido ? { valor: os.valor_recebido ?? os.valor_total, data: os.data_recebimento } : null,
+    assinaturaClientePath: os?.assinatura_cliente_path ?? null,
   };
 }

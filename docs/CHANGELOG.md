@@ -4,6 +4,15 @@ Cada mudança publicada fica registrada aqui, da mais nova para a mais antiga. A
 
 ---
 
+## 19/11/2026: assinaturas, compartilhar PDF, convite e saída por inatividade
+**Banco:** `20261119000001_assinaturas_inatividade.sql`
+
+- **Assinatura da empresa** em Meu Negócio (desenhar ou enviar imagem), em todos os PDFs.
+- **OS:** os botões Ver PDF, Baixar e Enviar viraram um só, **Compartilhar PDF**, que abre a prévia com abas PDF padrão / PDF mobile, **Assinar PDF** (cliente assina na tela, fica salvo na OS), **Baixar OS** e **Enviar OS**.
+- **Agenda:** embaixo do cliente aparece Bairro · Serviço · Valor (com "+N" quando há mais serviços), no lugar de horário e endereço.
+- **Criar conta removido.** Novos técnicos entram por convite do Supabase e completam os dados em Primeiro acesso.
+- **Opção "Sair depois de 24 horas" removida.** Agora a sessão cai sozinha para quem fica mais de 3 dias sem usar o app.
+
 ## 16/11/2026: área de segurança do iPhone
 - O app passa a respeitar a área do "risquinho" de baixo do iPhone (`viewport-fit=cover`). Antes, o celular informava 0 e os botões ficavam colados na beirada.
 - Menu do rodapé, barra da OS e do orçamento, rodapé das janelas (Excluir, Editar, Salvar) e menu lateral ganharam a área de segurança mais uma folga.

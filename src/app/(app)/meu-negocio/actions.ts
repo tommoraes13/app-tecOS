@@ -68,3 +68,21 @@ export async function salvarLogo(path: string | null): Promise<ActionResult> {
     return fail(e);
   }
 }
+
+/** Grava (ou tira) a assinatura da empresa, que sai em todos os PDFs. O arquivo vai direto para a pasta privada do usuário. */
+export async function salvarAssinaturaEmpresa(path: string | null): Promise<ActionResult> {
+  try {
+    const { supabase, user } = await requireUser();
+    if (path && !new RegExp(`^${user.id}/empresa-\\d+\\.png$`).test(path)) return { ok: false, error: "Arquivo inválido." };
+    const { data: atual } = await supabase.from("meu_negocio").select("assinatura_path").eq("user_id", user.id).maybeSingle();
+    const { error } = await supabase.from("meu_negocio").update({ assinatura_path: path }).eq("user_id", user.id);
+    if (error) return fail(error);
+    if (atual?.assinatura_path && atual.assinatura_path !== path && atual.assinatura_path.startsWith(`${user.id}/`)) {
+      await supabase.storage.from("assinaturas").remove([atual.assinatura_path]);
+    }
+    revalidatePath("/meu-negocio");
+    return { ok: true, data: null };
+  } catch (e) {
+    return fail(e);
+  }
+}

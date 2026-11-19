@@ -30,6 +30,7 @@ export const dados: PdfDados = {
     regiao_atendimento_km: 20,
     logo_url: null,
     tipo_precificacao: "servico_visita",
+    assinatura_path: null,
     valor_hora: 80,
     valor_visita: 60,
     duracao_visita_min: 60,
@@ -73,5 +74,6 @@ export const dados: PdfDados = {
   porHora: false,
   dataEntrega: "2026-10-29",
   recebido: null,
+  assinaturaClientePath: null,
 };
 

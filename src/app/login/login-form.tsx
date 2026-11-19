@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -23,7 +22,32 @@ export function LoginForm({ expirou = false }: { expirou?: boolean }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(expirou ? t("Você saiu sozinho depois de 24 horas. Entre de novo.") : null);
+  const [notice, setNotice] = useState<string | null>(expirou ? t("Você ficou mais de 3 dias sem usar o app. Entre de novo.") : null);
+
+  // Link do convite (ou de troca de senha) do Supabase chega com a sessão no fim do endereço (#access_token=…).
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = hash.get("access_token");
+    const refresh_token = hash.get("refresh_token");
+    if (hash.get("error_description")) {
+      setError(t("O link expirou ou já foi usado. Peça um novo convite."));
+      return;
+    }
+    if (!access_token || !refresh_token) return;
+    const tipo = hash.get("type");
+    setLoading(true);
+    void createClient()
+      .auth.setSession({ access_token, refresh_token })
+      .then(({ error }) => {
+        window.history.replaceState(null, "", window.location.pathname);
+        if (error) {
+          setLoading(false);
+          return setError(t("O link expirou ou já foi usado. Peça um novo convite."));
+        }
+        window.location.replace(tipo === "recovery" ? "/minha-conta?aba=dados" : tipo === "invite" ? "/definir-senha" : "/dashboard");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -90,13 +114,6 @@ export function LoginForm({ expirou = false }: { expirou?: boolean }) {
           {t("Esqueci minha senha")}
         </button>
       </p>
-
-      <div className="border-t border-border pt-4 text-center text-[13px] text-ink-muted">
-        {t("Ainda não tem conta?")}{" "}
-        <Link href="/criar-conta" className="font-medium text-brand-ink hover:underline">
-          {t("Criar conta")}
-        </Link>
-      </div>
     </form>
   );
 }

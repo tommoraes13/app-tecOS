@@ -17,7 +17,8 @@ Regras fechadas na Fase 1:
 - Status da OS: Em andamento (padrão), Pendente, Aguardando Pagamento, Finalizado, Retorno. Pendente e Retorno são manuais.
 - Recebimento decidido pelo status (desde 12/11/2026): Finalizado = recebido o total, data de hoje; outro status = a receber. Sem parcial, sem data futura, sem campos de recebimento e de data de entrega na tela (gatilho `finalizado_marca_recebido`). Finalizar OS pergunta se já recebeu: sim → Finalizado; não → Aguardando Pagamento.
 - Precificação (Meu Negócio › Configurar Precificação): Valor do Serviço, Serviço + Visita Técnica, Hora Técnica + Visita Técnica (horas = tempo médio × valor da hora, ajustável) e Livre (total digitado). Cada OS/orçamento guarda o seu método.
-- Criar conta em /criar-conta (nome, negócio, telefone, e-mail, senha). Opção "sair depois de 24 h" em Minha Conta.
+- Sem cadastro aberto: o dono convida pelo Supabase (Invite user) e o convidado completa em /definir-senha. Sessão cai após mais de 3 dias sem usar o app (cookie no middleware).
+- Assinatura da empresa (Meu Negócio) e do cliente (assinada na tela, salva na OS), no bucket privado `assinaturas`, saem nos PDFs. OS: botão único "Compartilhar PDF" com prévia, abas padrão/mobile, Assinar PDF, Baixar OS e Enviar OS.
 - Orçamentos não têm status nesta versão. "Transformar em atendimento" cria a OS copiando os dados, uma vez por orçamento.
 - Numeração de OS e de orçamento: 5 dígitos, por técnico, editável e sem repetir.
 - Senhas dos equipamentos: criptografadas no servidor (AES-256) com `EQUIPMENT_SECRET_KEY`; mascaradas com botões mostrar/copiar.

@@ -2,7 +2,11 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasSupabaseEnv, supabaseKey, supabaseUrl } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/criar-conta", "/auth"];
+const PUBLIC_PATHS = ["/login", "/auth"];
+
+/** Saída automática: quem fica mais de 3 dias sem abrir o app precisa entrar de novo. */
+export const COOKIE_USO = "tecdesk_uso";
+const LIMITE_SEM_USO_MS = 3 * 24 * 60 * 60 * 1000;
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -36,19 +40,42 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && !isPublic(pathname)) {
+  if (!user) {
+    if (isPublic(pathname)) {
+      // Sem login: zera a marca de uso, para o próximo login começar a contar do zero.
+      if (request.cookies.has(COOKIE_USO)) response.cookies.delete(COOKIE_USO);
+      return response;
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
     return NextResponse.redirect(url);
   }
 
-  if (user && (pathname === "/login" || pathname === "/criar-conta")) {
+  // Logado: mais de 3 dias desde o último uso encerra a sessão.
+  if (!pathname.startsWith("/auth/")) {
+    const ultimo = Number(request.cookies.get(COOKIE_USO)?.value);
+    if (Number.isFinite(ultimo) && ultimo > 0 && Date.now() - ultimo > LIMITE_SEM_USO_MS) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/expirou";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
 
+  response.cookies.set(COOKIE_USO, String(Date.now()), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: request.nextUrl.protocol === "https:",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 400,
+  });
   return response;
 }

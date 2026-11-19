@@ -47,16 +47,3 @@ export async function salvarFoto(path: string | null): Promise<ActionResult> {
     return fail(e);
   }
 }
-
-/** Liga ou desliga a saída automática 24 h depois do login. */
-export async function salvarSair24h(ligado: boolean): Promise<ActionResult> {
-  try {
-    const { supabase, user } = await requireUser();
-    const { error } = await supabase.from("perfil").update({ sair_apos_24h: Boolean(ligado) }).eq("user_id", user.id);
-    if (error) return fail(error);
-    revalidatePath("/", "layout");
-    return { ok: true, data: null };
-  } catch (e) {
-    return fail(e);
-  }
-}

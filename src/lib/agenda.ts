@@ -12,6 +12,9 @@ export type VisitaAgenda = {
   cliente: string | null;
   bairro: string | null;
   cidade: string | null;
+  /** Serviços da OS, na ordem em que foram lançados */
+  servicos: string[];
+  valor_total: number;
 };
 
 /** Visitas técnicas entre duas datas (inclusive), com o número da OS e o cliente. */
@@ -33,7 +36,12 @@ export async function carregarVisitas(
   if (lista.length === 0) return [];
 
   const osIds = [...new Set(lista.map((v) => v.os_id))];
-  const { data: oss } = await supabase.from("base_atendimentos").select("id, numero, status, cliente_id").in("id", osIds);
+  const [{ data: oss }, { data: itens }] = await Promise.all([
+    supabase.from("base_atendimentos").select("id, numero, status, cliente_id, valor_total").in("id", osIds),
+    supabase.from("os_servicos").select("os_id, descricao, ordem").in("os_id", osIds).order("ordem"),
+  ]);
+  const servicosPorOs = new Map<string, string[]>();
+  for (const i of itens ?? []) servicosPorOs.set(i.os_id, [...(servicosPorOs.get(i.os_id) ?? []), i.descricao]);
   const clienteIds = [...new Set((oss ?? []).map((o) => o.cliente_id).filter((x): x is string => Boolean(x)))];
   const { data: clientes } = clienteIds.length
     ? await supabase.from("base_clientes").select("id, nome, bairro, cidade").in("id", clienteIds)
@@ -58,6 +66,8 @@ export async function carregarVisitas(
         cliente: c?.nome ?? null,
         bairro: c?.bairro ?? null,
         cidade: c?.cidade ?? null,
+        servicos: servicosPorOs.get(v.os_id) ?? [],
+        valor_total: Number(os.valor_total),
       },
     ];
   });
