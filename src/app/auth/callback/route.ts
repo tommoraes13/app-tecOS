@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (!error) {
-      const destino = type === "invite" ? "/definir-senha" : type === "recovery" ? "/minha-conta?aba=dados" : next;
+      const destino = type === "invite" ? "/primeiro-acesso" : type === "recovery" ? "/minha-conta?aba=dados" : next;
       return NextResponse.redirect(`${origin}${destino}`);
     }
   }

@@ -5,11 +5,14 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { TopBarActions } from "@/components/layout/top-bar";
 import { PuxarParaAtualizar } from "@/components/layout/puxar-para-atualizar";
 import { MenuRodape } from "@/components/layout/menu-rodape";
+import { redirect } from "next/navigation";
 import { getPerfil } from "@/lib/perfil";
 
 /** Moldura das telas logadas: menu lateral + barra superior no computador; hambúrguer no celular. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const perfil = await getPerfil();
+  // Conta nova: antes de usar o app, passa pelo primeiro acesso (dados, senha, negócio).
+  if (perfil?.primeiroAcesso) redirect("/primeiro-acesso");
   const user = { nome: perfil?.nome ?? null, email: perfil?.email ?? null, fotoUrl: perfil?.fotoUrl ?? null };
 
   return (

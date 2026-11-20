@@ -77,7 +77,7 @@ for (const arq of arquivos) {
     for (const m of src.matchAll(new RegExp(String.raw`fallback\s*=\s*` + STR, "g"))) add(JSON.parse(`"${m[1]}"`), arq);
   }
   // Listas fixas de textos (planos, fusos, explicação dos métodos, menu do rodapé).
-  for (const nome of ["INCLUSO", "FUSOS_BR", "EXPLICA", "ITENS"]) {
+  for (const nome of ["INCLUSO", "FUSOS_BR", "EXPLICA", "ITENS", "PASSOS"]) {
     const bloco = src.match(new RegExp(String.raw`const ${nome}\b[^=]*= [\[{]([\s\S]*?)[\]}]( as const)?;`));
     if (!bloco) continue;
     for (const m of bloco[1].matchAll(new RegExp(STR, "g"))) {

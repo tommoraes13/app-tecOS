@@ -788,6 +788,8 @@ export type Database = {
           idioma: string
           moeda: string
           nome_exibicao: string | null
+          primeiro_acesso_pendente: boolean
+          telefone: string | null
           updated_at: string
           user_id: string
         }
@@ -798,6 +800,8 @@ export type Database = {
           idioma?: string
           moeda?: string
           nome_exibicao?: string | null
+          primeiro_acesso_pendente?: boolean
+          telefone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -808,6 +812,8 @@ export type Database = {
           idioma?: string
           moeda?: string
           nome_exibicao?: string | null
+          primeiro_acesso_pendente?: boolean
+          telefone?: string | null
           updated_at?: string
           user_id?: string
         }

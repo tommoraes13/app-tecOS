@@ -4,6 +4,13 @@ Cada mudança publicada fica registrada aqui, da mais nova para a mais antiga. A
 
 ---
 
+## 20/11/2026: primeiro acesso guiado, celular da conta e turma de alunos
+**Banco:** `20261120000001_celular_primeiro_acesso.sql`
+
+- Conta nova passa por um passo a passo de 5 telas (dados, senha, negócio, endereço, preços) antes de usar o app.
+- Novo campo Celular em Minha Conta, separado do telefone de Meu Negócio.
+- Criadas 30 contas de alunos (senha provisória 123, trocada no primeiro acesso).
+
 ## 19/11/2026: assinaturas, compartilhar PDF, convite e saída por inatividade
 **Banco:** `20261119000001_assinaturas_inatividade.sql`
 

@@ -11,6 +11,10 @@ export type Perfil = {
   idioma: string;
   moeda: string;
   fuso: string;
+  /** celular da conta (pessoal); o do negócio fica em Meu Negócio */
+  telefone: string | null;
+  /** conta nova: abre o passo a passo de primeiro acesso */
+  primeiroAcesso: boolean;
 };
 
 /** Usuário logado + preferências da conta, reaproveitado na mesma página. */
@@ -28,5 +32,7 @@ export const getPerfil = cache(async (): Promise<Perfil | null> => {
     idioma: data?.idioma ?? "pt-BR",
     moeda: data?.moeda ?? "BRL",
     fuso: data?.fuso ?? "America/Sao_Paulo",
+    telefone: data?.telefone ?? null,
+    primeiroAcesso: data?.primeiro_acesso_pendente ?? false,
   };
 });

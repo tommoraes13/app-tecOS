@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Feedback, Select } from "@/components/ui/controls";
 import { Field, Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n/client";
+import { phone } from "@/lib/format";
 import { LOCALES } from "@/i18n/config";
 import type { Perfil } from "@/lib/perfil";
 import { createClient } from "@/lib/supabase/client";
@@ -57,6 +58,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [nome, setNome] = useState(perfil.nome ?? "");
+  const [celular, setCelular] = useState(phone(perfil.telefone));
   const [idioma, setIdioma] = useState(perfil.idioma);
   const [moeda, setMoeda] = useState(perfil.moeda);
   const [fuso, setFuso] = useState(perfil.fuso);
@@ -115,7 +117,7 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const r = await salvarPerfil({ nome_exibicao: nome, idioma, moeda, fuso });
+      const r = await salvarPerfil({ nome_exibicao: nome, telefone: celular, idioma, moeda, fuso });
       setMsg(r.ok ? { kind: "ok", text: t("Dados da conta salvos.") } : { kind: "error", text: t(r.error) });
       if (r.ok) router.refresh();
     });
@@ -157,11 +159,20 @@ export function PerfilForm({ perfil }: { perfil: Perfil }) {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <Field label={t("Nome de exibição")} htmlFor="pf-nome">
-              <Input id="pf-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder={t("Exemplo: Everton")} />
-            </Field>
-          </div>
+          <Field label={t("Nome de exibição")} htmlFor="pf-nome">
+            <Input id="pf-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder={t("Exemplo: Everton")} />
+          </Field>
+          <Field label={t("Celular")} htmlFor="pf-cel">
+            <Input
+              id="pf-cel"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(11) 98765-4321"
+              value={celular}
+              onChange={(e) => setCelular(phone(e.target.value))}
+            />
+          </Field>
           <Field label={t("Idioma")} htmlFor="pf-idioma">
             <Select id="pf-idioma" value={idioma} onChange={(e) => setIdioma(e.target.value)}>
               {LOCALES.map((l) => (

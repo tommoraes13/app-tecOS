@@ -44,7 +44,7 @@ export function LoginForm({ expirou = false }: { expirou?: boolean }) {
           setLoading(false);
           return setError(t("O link expirou ou já foi usado. Peça um novo convite."));
         }
-        window.location.replace(tipo === "recovery" ? "/minha-conta?aba=dados" : tipo === "invite" ? "/definir-senha" : "/dashboard");
+        window.location.replace(tipo === "recovery" ? "/minha-conta?aba=dados" : tipo === "invite" ? "/primeiro-acesso" : "/dashboard");
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { LOCALE_COOKIE, normalizeCurrency, normalizeLocale, validTimeZone } from "@/i18n/config";
 import { fail, requireUser, txt, type ActionResult } from "@/lib/actions";
 
-export type PerfilInput = { nome_exibicao: string; idioma: string; moeda: string; fuso: string };
+export type PerfilInput = { nome_exibicao: string; telefone: string; idioma: string; moeda: string; fuso: string };
 
 export async function salvarPerfil(input: PerfilInput): Promise<ActionResult> {
   try {
@@ -15,6 +15,7 @@ export async function salvarPerfil(input: PerfilInput): Promise<ActionResult> {
       .from("perfil")
       .update({
         nome_exibicao: txt(input.nome_exibicao),
+        telefone: input.telefone.replace(/\D/g, "").slice(0, 30) || null,
         idioma,
         moeda: normalizeCurrency(input.moeda),
         fuso: validTimeZone(input.fuso),

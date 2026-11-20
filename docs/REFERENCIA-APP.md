@@ -1,7 +1,7 @@
 # TecDesk: especificação completa do app
 
 > Documento único de referência. Cole em outro chat ou IA para dar contexto completo do app.
-> Estado em 19/11/2026. O histórico de mudanças fica em `docs/CHANGELOG.md`.
+> Estado em 20/11/2026. O histórico de mudanças fica em `docs/CHANGELOG.md`.
 
 ## Índice
 
@@ -143,7 +143,8 @@ O menu do rodapé some nas telas de OS e orçamento, que têm barra própria com
 | `/auth/callback` | Retorno dos links de e-mail (convite, troca de senha) | Público |
 | `/auth/signout` | Sair | Logado |
 | `/auth/expirou` | Saída automática depois de 3 dias sem uso | Público |
-| `/definir-senha` | Primeiro acesso de quem foi convidado (nome, negócio, telefone, senha) | Logado |
+| `/primeiro-acesso` | Passo a passo da conta nova (dados, senha, negócio, endereço, preços) | Logado |
+| `/definir-senha` | Redireciona para `/primeiro-acesso` | Logado |
 | `/dashboard` | Dashboard | Logado |
 | `/servicos` | Lista de atendimentos | Logado |
 | `/servicos/novo` | Novo atendimento | Logado |
@@ -178,8 +179,18 @@ Quem não está logado é levado para `/login`. Quem está logado e abre `/login
 ### 6.2 Novas contas: convite pelo Supabase
 - Ninguém cria conta sozinho. O dono convida pelo painel do Supabase: Authentication › Users › **Invite user**, informando o e-mail.
 - No Supabase, "Allow new users to sign up" deve ficar **desligado** (Authentication › Sign In / Providers). O convite continua funcionando.
-- A pessoa recebe o e-mail, abre o link e cai em **Primeiro acesso** (`/definir-senha`): Seu nome, Nome do negócio, Telefone (WhatsApp), Senha e Repita a senha.
-- O gatilho `handle_new_user` cria Meu Negócio, perfil e numeração no momento do convite; a tela de primeiro acesso completa nome, negócio e telefone.
+- A pessoa recebe o e-mail, abre o link e cai no **Primeiro acesso** (ver 6.2.1).
+- Contas também podem ser criadas direto no banco pela IA (com senha provisória), como foi feito com a turma de alunos em 20/11/2026.
+
+#### 6.2.1 Primeiro acesso (`/primeiro-acesso`)
+- Toda conta nova nasce com `perfil.primeiro_acesso_pendente = true`. Enquanto estiver pendente, o layout das telas logadas manda para cá.
+- 5 passos curtos com barra de progresso, Próximo e Voltar:
+  1. **Seus dados:** nome, e-mail (só leitura) e celular da conta.
+  2. **Sua senha:** troca a senha provisória (obrigatório, mínimo 6 caracteres).
+  3. **Seu negócio:** nome do negócio, telefone do negócio (WhatsApp; se vazio, usa o celular) e CPF/CNPJ.
+  4. **Endereço do negócio:** CEP e endereço (pode pular).
+  5. **Como você cobra:** método de precificação e valor da visita ou da hora (pode pular).
+- "Começar a usar" grava tudo e desliga o pendente.
 
 ### 6.3 Dashboard (`/dashboard`)
 - **Saudação** com o nome de exibição.
@@ -326,7 +337,7 @@ O mesmo componente serve aos dois (`src/components/documento/documento-form.tsx`
 
 | Aba | Conteúdo |
 |---|---|
-| **Minha conta** | Foto (reduzida a 256×256), nome de exibição, idioma, moeda e fuso horário. |
+| **Minha conta** | Foto (reduzida a 256×256), nome de exibição, celular da conta, idioma, moeda e fuso horário. |
 | **Aparência** | Tema Claro, Escuro ou Igual ao aparelho. |
 | **Meu Plano** | Plano Gratuito (fase de testes). Upgrade e cancelamento marcados como "em breve". |
 | **Alterar dados** | Somente a troca de senha. |
@@ -503,6 +514,8 @@ auth.users ─┬─ meu_negocio (1)
 | `idioma` | texto | `pt-BR`, `en` ou `es` |
 | `moeda` | texto | `BRL`, `USD` ou `EUR` |
 | `fuso` | texto | Padrão `America/Sao_Paulo` |
+| `telefone` | texto | Celular da conta (pessoal, contato e recuperação). O de Meu Negócio é o que sai nas OS e mensagens. |
+| `primeiro_acesso_pendente` | sim/não | Conta nova: abre o passo a passo de primeiro acesso |
 
 ### 8.5 `numeracao`
 
@@ -661,7 +674,7 @@ Todas rodam com as permissões de quem chama e não podem ser executadas sem log
 
 | Gatilho | O que faz |
 |---|---|
-| `handle_new_user` | Ao criar a conta (convite), cria `meu_negocio`, `perfil` e `numeracao`. |
+| `handle_new_user` | Ao criar a conta, cria `meu_negocio`, `perfil` (com primeiro acesso pendente, nome e celular do cadastro) e `numeracao`. |
 | `definir_numero_os`, `definir_numero_orcamento` | Dão o próximo número e avançam a numeração. |
 | `finalizado_marca_recebido` | Aplica a regra de recebimento pelo status (ver 7.2). |
 | `set_updated_at` | Atualiza a data de alteração. |
@@ -688,6 +701,7 @@ Ficam em `supabase/migrations/`, na ordem em que foram aplicadas:
 5. `20261030000001_categorias_servico_avatar.sql`: 7 categorias e regras do bucket.
 6. `20261112000001_precificacao_recebimento_conta.sql`: 4 métodos, recebimento pelo status, sair após 24 h e criar conta.
 7. `20261119000001_assinaturas_inatividade.sql`: assinaturas (empresa e cliente), bucket `assinaturas` e remoção de `sair_apos_24h`.
+8. `20261120000001_celular_primeiro_acesso.sql`: celular da conta e primeiro acesso pendente.
 
 ## 9. Design System
 
@@ -742,7 +756,7 @@ src/app/
     meu-negocio/precificacao/
     minha-conta/            abas
     meu-plano/  precificacao/   só redirecionam
-  login/  definir-senha/
+  login/  primeiro-acesso/  definir-senha/ (redireciona)
   auth/callback/  auth/signout/  auth/expirou/
   api/pdf/[tipo]/[id]/      geração do PDF
 src/components/
