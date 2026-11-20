@@ -9,7 +9,7 @@ Cada mudança publicada fica registrada aqui, da mais nova para a mais antiga. A
 
 - Conta nova passa por um passo a passo de 5 telas (dados, senha, negócio, endereço, preços) antes de usar o app.
 - Novo campo Celular em Minha Conta, separado do telefone de Meu Negócio.
-- Criadas 30 contas de alunos (senha provisória 123, trocada no primeiro acesso).
+- Criadas 33 contas de alunos (30 da planilha + Matheus, Ananda e Everton; senha provisória 123, trocada no primeiro acesso).
 
 ## 19/11/2026: assinaturas, compartilhar PDF, convite e saída por inatividade
 **Banco:** `20261119000001_assinaturas_inatividade.sql`
